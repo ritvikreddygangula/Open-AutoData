@@ -1,2 +1,4 @@
 .envvenv/
 data/snowflake_failed.jsonl
+venv/
+.env

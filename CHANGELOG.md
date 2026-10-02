@@ -30,3 +30,4 @@
 - `1bcc149` Add evaluate node applying the paper's acceptance gate
 - `bbcf954` refactor: back off longer when an OpenRouter provider is rate-limited
 - `5cb71c7` refactor: label a zero-scoring weak attempt as too hard instead of too easy
+- `2261142` Update team docs with the paper-aligned agent design

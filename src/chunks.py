@@ -17,9 +17,10 @@ def clean_text(text: str) -> str:
 
 
 def _from_csv(path: Path) -> list[dict]:
-    csv.field_size_limit(sys.maxsize)
+    csv.field_size_limit(2**31 - 1)  # sys.maxsize overflows a C long on Windows
     with path.open(newline="", encoding="utf-8-sig") as f:
-        rows = [{k.strip().upper(): v for k, v in row.items()} for row in csv.DictReader(f)]
+        # DictReader files values beyond the header under a None key; drop them.
+        rows = [{k.strip().upper(): v for k, v in row.items() if k} for row in csv.DictReader(f)]
     if rows and not {"CHUNK_ID", "CHUNK_TEXT"} <= rows[0].keys():
         raise ValueError(f"{path} needs CHUNK_ID and CHUNK_TEXT columns")
     return [

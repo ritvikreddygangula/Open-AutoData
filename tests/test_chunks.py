@@ -62,3 +62,15 @@ def test_load_rejects_unknown_extension(tmp_path):
     path.write_text("x")
     with pytest.raises(ValueError, match=".txt"):
         load_chunks(path)
+
+
+def test_load_csv_ignores_values_beyond_the_header(tmp_path):
+    path = write_csv(tmp_path, "1,d,a,text,stray\n")
+    assert load_chunks(path)[0]["text"] == "text"
+
+
+def test_csv_field_limit_fits_a_32_bit_c_long(tmp_path):
+    import csv
+
+    load_chunks(write_csv(tmp_path, "1,d,a,text\n"))
+    assert csv.field_size_limit() <= 2**31 - 1

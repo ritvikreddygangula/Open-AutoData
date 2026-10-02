@@ -33,3 +33,12 @@
 - `2261142` Update team docs with the paper-aligned agent design
 - `fd22e9e` refactor: require numeric rubric criteria to state the expected value
 - `8f40e28` refactor: show the challenger the judge's notes on each failed round
+
+## feat/agent-graph
+
+- `fc6169a` Add recorder that writes trajectories, accepted pairs and Snowflake rows
+- `6277df1` Wire the agent nodes into the LangGraph loop
+- `ab2a0ee` Add parallel chunk runner and command line entry point
+- `57df389` refactor: stop the verifier treating given figures as answer leakage
+- `918d4db` refactor: hide per-request HTTP logs during pipeline runs
+- `b5c9c84` refactor: run the strong solver every round so each round has a gap

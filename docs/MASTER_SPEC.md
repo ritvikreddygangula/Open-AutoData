@@ -41,7 +41,7 @@ A failed round is labelled `TOO_EASY`, `TOO_HARD`, `FAILED_ON_STRONG` or `FAILED
 - `src/snowflake_sync.py`: Snowflake ingestion & writeback.
 - `src/baseline.py`: Single-shot unverified generator.
 - `src/benchmark.py`: Evaluator & chart generator.
-- `app.py`: Streamlit real-time dashboard.
+- `site/`: Next.js website and live run log; reads `data/trajectories.json` and `data/benchmark.json`.
 
 ## 5. Shared Data Contract
 Every trajectory record (one per round) is produced by `src/state.py:to_record()`:

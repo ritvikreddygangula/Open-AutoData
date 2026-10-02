@@ -1,0 +1,510 @@
+[
+  {
+    "demo": true,
+    "run_id": "demo-run",
+    "arm": "loop",
+    "chunk_id": "7",
+    "source": "Boston Beer Co. · 10-Q Q1 2026",
+    "round_num": 1,
+    "question_type": "percentage change",
+    "skill_tags": [
+      "simple_calculation"
+    ],
+    "context": "Q1 2026 vs Q1 2025 (thirteen weeks). Barrels sold: 1,561,000 vs 1,677,000. Net revenue: $433.9M vs $453.9M. Net revenue per barrel: $277.98 vs $270.64. Management attributes the revenue change to volume, pricing ($9.1M) and product mix ($0.9M).",
+    "question": "By what percentage did barrels sold fall in Q1 2026?",
+    "reference_answer": "About 6.9%: (1,677,000 - 1,561,000) / 1,677,000.",
+    "rubric": [
+      {
+        "criterion": "Computes a decline of about 6.9%",
+        "weight": 7
+      },
+      {
+        "criterion": "Uses 1,677,000 as the base",
+        "weight": 6
+      },
+      {
+        "criterion": "Uses 1,561,000 as the current figure",
+        "weight": 5
+      },
+      {
+        "criterion": "States the direction as a decline",
+        "weight": 5
+      },
+      {
+        "criterion": "Shows the subtraction step",
+        "weight": 4
+      },
+      {
+        "criterion": "Shows the division step",
+        "weight": 4
+      },
+      {
+        "criterion": "Expresses the result as a percentage",
+        "weight": 3
+      },
+      {
+        "criterion": "Rounds sensibly",
+        "weight": 2
+      },
+      {
+        "criterion": "Does not confuse barrels with revenue",
+        "weight": 2
+      },
+      {
+        "criterion": "States units clearly",
+        "weight": 2
+      }
+    ],
+    "weak_attempt_scores": [
+      80,
+      90,
+      85
+    ],
+    "strong_attempt_scores": [],
+    "weak_score": 85.0,
+    "strong_score": null,
+    "score_gap": null,
+    "judge_feedback": "weak 1: correct, single-step arithmetic. weak 2: correct. weak 3: correct, minor rounding.",
+    "verifier_feedback": "PASS",
+    "status": "REVISE",
+    "failure_mode": "TOO_EASY",
+    "fail_reason": "weak_score 85.0 > 65; best weak attempt 90 > 75"
+  },
+  {
+    "demo": true,
+    "run_id": "demo-run",
+    "arm": "loop",
+    "chunk_id": "7",
+    "source": "Boston Beer Co. · 10-Q Q1 2026",
+    "round_num": 2,
+    "question_type": "driver decomposition",
+    "skill_tags": [
+      "multi_step_calculation",
+      "reconciliation"
+    ],
+    "context": "Q1 2026 vs Q1 2025 (thirteen weeks). Barrels sold: 1,561,000 vs 1,677,000. Net revenue: $433.9M vs $453.9M. Net revenue per barrel: $277.98 vs $270.64. Management attributes the revenue change to volume, pricing ($9.1M) and product mix ($0.9M).",
+    "question": "Valuing the barrels lost in Q1 2026 at Q1 2025 net revenue per barrel, how much revenue does lower volume explain, and how does that compare with the pricing and mix figures management gives?",
+    "reference_answer": "116,000 fewer barrels × $270.64 ≈ $31.4M lost to volume. Pricing (+$9.1M) and mix (+$0.9M) offset about $10.0M of it, which is why net revenue fell by only about $20M.",
+    "rubric": [
+      {
+        "criterion": "Derives the 116,000 barrel decline",
+        "weight": 7
+      },
+      {
+        "criterion": "Uses the 2025 per-barrel figure of $270.64",
+        "weight": 6
+      },
+      {
+        "criterion": "Computes the volume effect at about $31.4M",
+        "weight": 5
+      },
+      {
+        "criterion": "Adds pricing and mix to about $10.0M",
+        "weight": 5
+      },
+      {
+        "criterion": "Nets the effects to roughly a $21M decline",
+        "weight": 4
+      },
+      {
+        "criterion": "Reconciles with the reported ≈ $20M decline",
+        "weight": 4
+      },
+      {
+        "criterion": "Explains why prior-year price isolates volume",
+        "weight": 3
+      },
+      {
+        "criterion": "Keeps signs of each effect correct",
+        "weight": 2
+      },
+      {
+        "criterion": "Uses thirteen-week periods consistently",
+        "weight": 2
+      },
+      {
+        "criterion": "States the final comparison clearly",
+        "weight": 2
+      }
+    ],
+    "weak_attempt_scores": [
+      42.5,
+      55,
+      47.5
+    ],
+    "strong_attempt_scores": [
+      85,
+      90,
+      80
+    ],
+    "weak_score": 48.3,
+    "strong_score": 85.0,
+    "score_gap": 36.7,
+    "judge_feedback": "weak 1: used 2026 price per barrel. weak 2: skipped the reconciliation. weak 3: wrong sign on mix. strong 1: missed the residual. strong 2: complete. strong 3: rounding only.",
+    "verifier_feedback": "PASS",
+    "status": "ACCEPTED",
+    "failure_mode": null,
+    "fail_reason": null
+  },
+  {
+    "demo": true,
+    "run_id": "demo-run",
+    "arm": "loop",
+    "chunk_id": "4",
+    "source": "Marine Products Corp. · 10-Q Q1 2026",
+    "round_num": 1,
+    "question_type": "ratio change",
+    "skill_tags": [
+      "simple_calculation"
+    ],
+    "context": "Average gross selling price per boat: $97.7K in Q1 2026 vs $85.1K in Q1 2025. Boats sold: 617 vs 625. Net sales rose 12.8%.",
+    "question": "By what percentage did the average gross selling price per boat change?",
+    "reference_answer": "About +14.8%.",
+    "rubric": [
+      {
+        "criterion": "Computes about +14.8%",
+        "weight": 7
+      },
+      {
+        "criterion": "Uses $85.1K as the base",
+        "weight": 6
+      },
+      {
+        "criterion": "Uses $97.7K as the current figure",
+        "weight": 5
+      },
+      {
+        "criterion": "States it as an increase",
+        "weight": 5
+      },
+      {
+        "criterion": "Shows the subtraction",
+        "weight": 4
+      },
+      {
+        "criterion": "Shows the division",
+        "weight": 4
+      },
+      {
+        "criterion": "Expresses a percentage",
+        "weight": 3
+      },
+      {
+        "criterion": "Rounds sensibly",
+        "weight": 2
+      },
+      {
+        "criterion": "Does not mix in unit counts",
+        "weight": 2
+      },
+      {
+        "criterion": "States units clearly",
+        "weight": 2
+      }
+    ],
+    "weak_attempt_scores": [
+      67.5,
+      62.5,
+      77.5
+    ],
+    "strong_attempt_scores": [],
+    "weak_score": 69.2,
+    "strong_score": null,
+    "score_gap": null,
+    "judge_feedback": "weak 1: correct but no working. weak 2: rounding error. weak 3: correct.",
+    "verifier_feedback": "PASS",
+    "status": "REVISE",
+    "failure_mode": "TOO_EASY",
+    "fail_reason": "weak_score 69.2 > 65; best weak attempt 77.5 > 75"
+  },
+  {
+    "demo": true,
+    "run_id": "demo-run",
+    "arm": "loop",
+    "chunk_id": "4",
+    "source": "Marine Products Corp. · 10-Q Q1 2026",
+    "round_num": 2,
+    "question_type": "figure reconciliation",
+    "skill_tags": [
+      "multi_step_calculation",
+      "definitional_reasoning"
+    ],
+    "context": "Average gross selling price per boat: $97.7K in Q1 2026 vs $85.1K in Q1 2025. Boats sold: 617 vs 625. Net sales: $66.5M vs $59.0M, up 12.8%. Selling prices are reported gross; net sales are after dealer incentives and discounts.",
+    "question": "Combining the change in boats sold with the change in average gross price per boat, what growth in gross boat revenue is implied, and why does it differ from reported net sales growth?",
+    "reference_answer": "617/625 × 97.7/85.1 ≈ 1.133, an implied ≈ 13.3% rise in gross boat revenue. It runs ahead of the 12.8% net sales growth because the per-boat figure is gross, before incentives and discounts that reduce net sales.",
+    "rubric": [
+      {
+        "criterion": "Computes unit change of about -1.3%",
+        "weight": 7
+      },
+      {
+        "criterion": "Computes price change of about +14.8%",
+        "weight": 6
+      },
+      {
+        "criterion": "Combines them multiplicatively",
+        "weight": 5
+      },
+      {
+        "criterion": "Arrives at about 13.3%",
+        "weight": 5
+      },
+      {
+        "criterion": "Compares against the 12.8% reported",
+        "weight": 4
+      },
+      {
+        "criterion": "Identifies gross vs net as the cause",
+        "weight": 4
+      },
+      {
+        "criterion": "Names incentives or discounts as the deduction",
+        "weight": 3
+      },
+      {
+        "criterion": "Does not add percentages naively",
+        "weight": 2
+      },
+      {
+        "criterion": "Keeps both periods straight",
+        "weight": 2
+      },
+      {
+        "criterion": "States the conclusion clearly",
+        "weight": 2
+      }
+    ],
+    "weak_attempt_scores": [
+      50,
+      57.5,
+      47.5
+    ],
+    "strong_attempt_scores": [
+      82.5,
+      77.5,
+      85
+    ],
+    "weak_score": 51.7,
+    "strong_score": 81.7,
+    "score_gap": 30.0,
+    "judge_feedback": "weak 1: added the percentages. weak 2: missed gross vs net. weak 3: wrong base. strong 1: complete. strong 2: thin explanation. strong 3: complete.",
+    "verifier_feedback": "PASS",
+    "status": "ACCEPTED",
+    "failure_mode": null,
+    "fail_reason": null
+  },
+  {
+    "demo": true,
+    "run_id": "demo-run",
+    "arm": "loop",
+    "chunk_id": "28",
+    "source": "Idaho Strategic Resources · 10-Q Q1 2026",
+    "round_num": 1,
+    "question_type": "recall",
+    "skill_tags": [
+      "lookup"
+    ],
+    "context": "Revenue for the three months ended March 31, 2026 was $14,482,286 versus $7,278,536 a year earlier.",
+    "question": "What was revenue for the three months ended March 31, 2026?",
+    "reference_answer": "$14,482,286.",
+    "rubric": [
+      {
+        "criterion": "States $14,482,286",
+        "weight": 7
+      },
+      {
+        "criterion": "Attributes it to Q1 2026",
+        "weight": 6
+      },
+      {
+        "criterion": "Uses dollars",
+        "weight": 5
+      },
+      {
+        "criterion": "Does not use the 2025 figure",
+        "weight": 5
+      },
+      {
+        "criterion": "Gives the exact figure",
+        "weight": 4
+      },
+      {
+        "criterion": "Does not round",
+        "weight": 4
+      },
+      {
+        "criterion": "Names the period end",
+        "weight": 3
+      },
+      {
+        "criterion": "Does not add commentary",
+        "weight": 2
+      },
+      {
+        "criterion": "Answers directly",
+        "weight": 2
+      },
+      {
+        "criterion": "Uses the correct company",
+        "weight": 2
+      }
+    ],
+    "weak_attempt_scores": [],
+    "strong_attempt_scores": [],
+    "weak_score": null,
+    "strong_score": null,
+    "score_gap": null,
+    "judge_feedback": null,
+    "verifier_feedback": "question_quality: RECALL; leakage: LEAKS_ANSWER: the context states the figure the question asks for",
+    "status": "REVISE",
+    "failure_mode": "FAILED_QV",
+    "fail_reason": "question_quality: RECALL; leakage: LEAKS_ANSWER: context states the answer verbatim"
+  },
+  {
+    "demo": true,
+    "run_id": "demo-run",
+    "arm": "loop",
+    "chunk_id": "28",
+    "source": "Idaho Strategic Resources · 10-Q Q1 2026",
+    "round_num": 2,
+    "question_type": "attribution split",
+    "skill_tags": [
+      "multi_step_calculation"
+    ],
+    "context": "Revenue rose from $7,278,536 to $14,482,286. The company says 97% of the increase came from realized gold price and the remaining 3% from producing 334 more ounces.",
+    "question": "How much of the revenue increase, in dollars, came from gold price versus production volume?",
+    "reference_answer": "The increase is ≈ $7.20M. 97% ≈ $6.99M from price and 3% ≈ $0.22M from volume.",
+    "rubric": [
+      {
+        "criterion": "Computes the ≈ $7.20M increase",
+        "weight": 7
+      },
+      {
+        "criterion": "Applies 97% to price",
+        "weight": 6
+      },
+      {
+        "criterion": "Applies 3% to volume",
+        "weight": 5
+      },
+      {
+        "criterion": "Gets ≈ $6.99M from price",
+        "weight": 5
+      },
+      {
+        "criterion": "Gets ≈ $0.22M from volume",
+        "weight": 4
+      },
+      {
+        "criterion": "Checks the two parts sum to the total",
+        "weight": 4
+      },
+      {
+        "criterion": "Uses the correct base for the split",
+        "weight": 3
+      },
+      {
+        "criterion": "Keeps units in dollars",
+        "weight": 2
+      },
+      {
+        "criterion": "Names both drivers",
+        "weight": 2
+      },
+      {
+        "criterion": "States the split clearly",
+        "weight": 2
+      }
+    ],
+    "weak_attempt_scores": [
+      57.5,
+      70,
+      57.5
+    ],
+    "strong_attempt_scores": [
+      55,
+      50,
+      60
+    ],
+    "weak_score": 61.7,
+    "strong_score": 55.0,
+    "score_gap": -6.7,
+    "judge_feedback": "strong 1: unsure whether 97% applies to the increase or the total. strong 2: same ambiguity. strong 3: picked the total.",
+    "verifier_feedback": "PASS",
+    "status": "REVISE",
+    "failure_mode": "FAILED_ON_STRONG",
+    "fail_reason": "strong_score 55.0 < 60; score_gap -6.7 < 20"
+  },
+  {
+    "demo": true,
+    "run_id": "demo-run",
+    "arm": "loop",
+    "chunk_id": "28",
+    "source": "Idaho Strategic Resources · 10-Q Q1 2026",
+    "round_num": 3,
+    "question_type": "implied quantity check",
+    "skill_tags": [
+      "multi_step_calculation",
+      "consistency_checking"
+    ],
+    "context": "Revenue: $14,482,286 vs $7,278,536. Realized gold price per ounce sold: $4,702.04 vs $2,848.74. The company produced 334 more ounces than a year earlier.",
+    "question": "Derive the ounces sold in each quarter and check whether the change matches the 334-ounce production increase.",
+    "reference_answer": "≈ 3,080 oz in Q1 2026 and ≈ 2,555 oz in Q1 2025, a ≈ 525 oz increase, which does not match 334 oz because ounces sold differ from ounces produced.",
+    "rubric": [
+      {
+        "criterion": "Divides 2026 revenue by 2026 price",
+        "weight": 7
+      },
+      {
+        "criterion": "Gets ≈ 3,080 oz",
+        "weight": 6
+      },
+      {
+        "criterion": "Divides 2025 revenue by 2025 price",
+        "weight": 5
+      },
+      {
+        "criterion": "Gets ≈ 2,555 oz",
+        "weight": 5
+      },
+      {
+        "criterion": "Computes the ≈ 525 oz change",
+        "weight": 4
+      },
+      {
+        "criterion": "Compares it with 334 oz",
+        "weight": 4
+      },
+      {
+        "criterion": "Identifies sold vs produced as the gap",
+        "weight": 3
+      },
+      {
+        "criterion": "Keeps periods straight",
+        "weight": 2
+      },
+      {
+        "criterion": "Uses realized price, not spot",
+        "weight": 2
+      },
+      {
+        "criterion": "States the conclusion clearly",
+        "weight": 2
+      }
+    ],
+    "weak_attempt_scores": [
+      30,
+      0,
+      25
+    ],
+    "strong_attempt_scores": [],
+    "weak_score": 18.3,
+    "strong_score": null,
+    "score_gap": null,
+    "judge_feedback": "weak 2: answered a different question, no criteria met.",
+    "verifier_feedback": "PASS",
+    "status": "REJECTED",
+    "failure_mode": "TOO_HARD",
+    "fail_reason": "a weak attempt scored 0"
+  }
+]

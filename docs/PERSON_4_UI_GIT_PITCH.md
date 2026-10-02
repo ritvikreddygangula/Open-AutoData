@@ -5,7 +5,7 @@ You are the Pitch & Repository Director. Your objective is to build the visual p
 
 ## Instructions for Claude Code
 1. Read `MASTER_SPEC.md` for project context, the agents, and the record contract (§5).
-2. Build a real-time Streamlit dashboard (`app.py`) that continuously polls `data/trajectories.json` and `data/accepted.json`.
+2. Build the website in `site/` (Next.js, static export) that polls `data/trajectories.json` for the live run log and `data/benchmark.json` for the benchmark card.
 3. Design the UI to show top-level metrics (rounds, accepted pairs, average gap, rounds per accepted pair) and an expandable feed of live agent attempts showing the Weak vs. Strong score bars.
    - Each round has 3 weak and up to 3 strong attempt scores (`weak_attempt_scores`, `strong_attempt_scores`); show them, not just the averages.
    - `weak_*` / `strong_*` fields are empty when a round failed the quality check (`FAILED_QV`) or hit a model error, so handle missing values.

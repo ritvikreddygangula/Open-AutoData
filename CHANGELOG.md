@@ -31,3 +31,5 @@
 - `bbcf954` refactor: back off longer when an OpenRouter provider is rate-limited
 - `5cb71c7` refactor: label a zero-scoring weak attempt as too hard instead of too easy
 - `2261142` Update team docs with the paper-aligned agent design
+- `fd22e9e` refactor: require numeric rubric criteria to state the expected value
+- `8f40e28` refactor: show the challenger the judge's notes on each failed round

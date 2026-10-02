@@ -109,3 +109,36 @@ def node_challenger(state) -> dict:
     if package is None:
         return {**update, "error": f"challenger: {problem}"}
     return {**update, **package}
+
+
+# Each check and the one value that means it passed (paper Fig. 9).
+_VERIFIER_CHECKS = {
+    "leakage": ("NO_LEAKAGE", {"NO_LEAKAGE", "LEAKS_ANSWER"}),
+    "question_quality": ("GOOD", {"GOOD", "TOO_EASY", "RECALL"}),
+    "rubric_quality": ("PASS", {"PASS", "FAIL"}),
+    "type_consistency": ("CONSISTENT", {"CONSISTENT", "INCONSISTENT"}),
+}
+
+
+def node_verifier(state) -> dict:
+    """Check the package for answer leakage, recall-only questions and a weak rubric before any solving."""
+    sent = {field: state[field] for field in ("question_type", "context", "question", "rubric")}
+    request = f"{_filing(state)}\n\nPACKAGE:\n{json.dumps(sent, indent=2)}"
+    try:
+        reply = llm.chat_json("verifier", [_system("VERIFIER_SYSTEM"), {"role": "user", "content": request}], 0)
+    except llm.LLMError as e:
+        return {"error": f"verifier: {e}"}
+    if reply is None:
+        return {"error": "verifier: no usable JSON reply"}
+
+    failed = []
+    for check, (good, allowed) in _VERIFIER_CHECKS.items():
+        value = str(reply.get(check, "")).strip().upper()
+        if value not in allowed:
+            return {"error": f"verifier: unrecognised {check} value {reply.get(check)!r}"}
+        if value != good:
+            failed.append(f"{check}: {value}")
+    feedback = str(reply.get("feedback") or "").strip()
+    if not failed:
+        return {"verifier_verdict": "PASS", "verifier_feedback": feedback}
+    return {"verifier_verdict": "FAIL", "verifier_feedback": "; ".join(failed) + (f": {feedback}" if feedback else "")}

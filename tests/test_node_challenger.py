@@ -40,12 +40,15 @@ def test_refinement_lists_failed_questions_by_failure_mode(fake_llm):
          "fail_reason": "context leaks the answer"},
         {"round_num": 3, "question": "Forecast 2027 margin", "failure_mode": "FAILED_ON_STRONG",
          "fail_reason": "strong_score 40.0 < 60"},
+        {"round_num": 4, "question": "Reconcile every line item", "failure_mode": "TOO_HARD",
+         "fail_reason": "a weak attempt scored 0"},
     ]
     node_challenger(chunk_state(round_num=3, history=history))
     user = client.calls[0]["messages"][1]["content"]
     assert 'TOO EASY' in user and '- Round 1: "What were net sales?" (weak_score 80.0 > 65)' in user
     assert 'FAILED QUALITY CHECK' in user and "context leaks the answer" in user
     assert 'FAILED ON STRONG' in user and "strong_score 40.0 < 60" in user
+    assert 'TOO HARD' in user and "Reconcile every line item" in user
     assert "ENTIRELY NEW question from a DIFFERENT angle" in user
 
 

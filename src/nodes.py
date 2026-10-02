@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from src import config, llm
 from src.default_prompts import get_prompt
-from src.gate import average, strong_gate_failures, weak_gate_failures
+from src.gate import WEAK_ZERO, average, strong_gate_failures, weak_gate_failures
 from src.rubric import parse_verdicts, score_answer, validate_rubric
 
 CHALLENGER_TEMPERATURE = 0.7
@@ -34,6 +34,7 @@ _FRESH_ROUND = {
 _FAILURE_GROUPS = (
     ("TOO_EASY", "TOO EASY (the weak solver scored too high)"),
     ("FAILED_ON_STRONG", "FAILED ON STRONG (the strong solver scored too low or the gap was too small)"),
+    ("TOO_HARD", "TOO HARD (a weak solver attempt scored 0, so there is no learning signal)"),
     ("FAILED_QV", "FAILED QUALITY CHECK"),
 )
 _TEXT_FIELDS = ("question_type", "context", "question", "reference_answer")
@@ -216,7 +217,7 @@ def _failure(state) -> tuple[str, list[str]] | None:
     if state.get("verifier_verdict") == "FAIL":
         return "FAILED_QV", [state.get("verifier_feedback") or "quality check failed"]
     if failures := weak_gate_failures(state["weak_attempt_scores"]):
-        return "TOO_EASY", failures
+        return ("TOO_HARD" if failures == [WEAK_ZERO] else "TOO_EASY"), failures
     if failures := strong_gate_failures(state["weak_score"], state["strong_attempt_scores"]):
         # Once the weak gate passed, a failing strong gate is either saturation or a gap that is too small.
         saturated = state["strong_score"] >= config.STRONG_MAX

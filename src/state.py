@@ -5,7 +5,7 @@ from typing import Literal, TypedDict
 Status = Literal["PENDING", "REVISE", "ACCEPTED", "REJECTED"]
 Arm = Literal["loop", "baseline"]
 # Why a round failed, in the paper's groups (Fig. 7): fed back to the challenger next round.
-FailureMode = Literal["TOO_EASY", "FAILED_ON_STRONG", "FAILED_QV"]
+FailureMode = Literal["TOO_EASY", "TOO_HARD", "FAILED_ON_STRONG", "FAILED_QV"]
 
 
 class AgentState(TypedDict, total=False):

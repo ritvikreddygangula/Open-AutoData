@@ -66,3 +66,12 @@ def test_infrastructure_error_rejects_the_chunk_without_feedback():
 def test_missing_scores_are_treated_as_an_error(state):
     update = node_evaluate(state)
     assert update["status"] == "REJECTED" and update["fail_reason"].startswith("error:")
+
+
+def test_a_zero_weak_attempt_is_too_hard_not_too_easy():
+    update = node_evaluate(judged([28.8, 0.0, 25.0]))
+    assert update["failure_mode"] == "TOO_HARD" and update["fail_reason"] == "a weak attempt scored 0"
+
+
+def test_a_weak_attempt_above_75_still_counts_as_too_easy_even_with_a_zero():
+    assert node_evaluate(judged([80, 0, 30]))["failure_mode"] == "TOO_EASY"

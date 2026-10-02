@@ -1,4 +1,6 @@
 """OpenRouter access through the OpenAI-compatible client."""
+import json
+import re
 import time
 
 import openai
@@ -46,3 +48,56 @@ def chat(role: str, messages: list[dict], temperature: float = 0.7) -> str:
             time.sleep(BACKOFF_SECONDS * 2**attempt)
 
     raise LLMError(f"{role} ({model}) gave up after {MAX_RETRIES + 1} attempts: {problem}")
+
+
+JSON_NUDGE = "Reply again with ONLY a single valid JSON object. No prose, no code fences."
+_TRAILING_COMMA = re.compile(r'("(?:\\.|[^"\\])*")|,\s*([}\]])')
+
+
+def _first_object(text: str) -> str | None:
+    start = text.find("{")
+    if start == -1:
+        return None
+    depth, in_string, escaped = 0, False, False
+    for i, ch in enumerate(text[start:], start):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+        elif ch == '"':
+            in_string = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
+
+
+def parse_json(text: str) -> dict | None:
+    candidate = _first_object(text or "")
+    if candidate is None:
+        return None
+    for attempt in (candidate, _TRAILING_COMMA.sub(lambda m: m.group(1) or m.group(2), candidate)):
+        try:
+            parsed = json.loads(attempt)
+        except json.JSONDecodeError:
+            continue
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+def chat_json(role: str, messages: list[dict], temperature: float = 0.2) -> dict | None:
+    reply = chat(role, messages, temperature)
+    parsed = parse_json(reply)
+    if parsed is not None:
+        return parsed
+    retry = messages + [
+        {"role": "assistant", "content": reply},
+        {"role": "user", "content": JSON_NUDGE},
+    ]
+    return parse_json(chat(role, retry, temperature))

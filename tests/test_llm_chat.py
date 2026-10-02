@@ -86,3 +86,15 @@ def test_chat_retries_reply_without_choices(use_client):
     client = use_client(NO_CHOICES, "ok")
     assert llm.chat("judge", MESSAGES) == "ok"
     assert len(client.calls) == 2
+
+
+def test_rate_limits_back_off_longer_than_other_failures(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(llm.time, "sleep", sleeps.append)
+    client = FakeClient(status_error(openai.RateLimitError, 429), status_error(openai.RateLimitError, 429), "ok",
+                        connection_error(), "ok")
+    monkeypatch.setattr(llm, "get_client", lambda: client)
+    assert llm.chat("judge", MESSAGES) == "ok"
+    assert sleeps == [10.0, 20.0]
+    assert llm.chat("judge", MESSAGES) == "ok"
+    assert sleeps[2:] == [1.0]

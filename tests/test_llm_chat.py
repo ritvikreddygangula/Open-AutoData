@@ -70,3 +70,13 @@ def test_get_client_requires_api_key(monkeypatch):
     monkeypatch.setattr(llm, "_client", None)
     with pytest.raises(llm.config.ConfigError, match="OPEN_ROUTER"):
         llm.get_client()
+
+
+def test_get_client_leaves_retries_to_chat_and_caps_wait(monkeypatch):
+    monkeypatch.setenv("OPEN_ROUTER", "sk-or-test")
+    monkeypatch.setattr(llm, "_client", None)
+    built = {}
+    monkeypatch.setattr(llm.openai, "OpenAI", lambda **kwargs: built.update(kwargs) or "client")
+    assert llm.get_client() == "client"
+    assert built["max_retries"] == 0
+    assert built["timeout"] == llm.config.LLM_TIMEOUT_SECONDS

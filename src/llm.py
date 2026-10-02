@@ -21,7 +21,13 @@ class LLMError(Exception):
 def get_client() -> openai.OpenAI:
     global _client
     if _client is None:
-        _client = openai.OpenAI(base_url=config.OPENROUTER_BASE_URL, api_key=config.get_api_key())
+        # chat() owns the retry policy, so the SDK's own retries are turned off.
+        _client = openai.OpenAI(
+            base_url=config.OPENROUTER_BASE_URL,
+            api_key=config.get_api_key(),
+            max_retries=0,
+            timeout=config.LLM_TIMEOUT_SECONDS,
+        )
     return _client
 
 

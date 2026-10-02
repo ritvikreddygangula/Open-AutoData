@@ -1,4 +1,5 @@
-.envvenv/
-data/snowflake_failed.jsonl
-venv/
 .env
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store

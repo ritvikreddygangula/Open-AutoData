@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
-import { FAILURE_LABEL, normalize, useJson, type RawRecord, type Traj } from "@/lib/data";
+import { FAILURE_LABEL, latestRun, useJson, type RawRecord, type Traj } from "@/lib/data";
 import { GATE } from "@/lib/gate";
 import { DemoBadge, GapMeter, Logo, Mark, StatusPill } from "./ui";
 
@@ -26,7 +26,7 @@ function durations(q: string) {
 export default function PipelineReplay() {
   const res = useJson<RawRecord[]>("/data/trajectories.json", 5000);
   const reduce = useReducedMotion();
-  const records = useMemo(() => (res.state === "ready" ? res.data.map(normalize) : []), [res]);
+  const records = useMemo(() => (res.state === "ready" ? latestRun(res.data) : []), [res]);
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState(0);
 
@@ -57,7 +57,7 @@ export default function PipelineReplay() {
               <span className="absolute inset-0 animate-breathe rounded-full bg-signal" />
             </span>
             <span className="shrink-0 text-fg">Live replay</span>
-            <span className="truncate text-dim normal-case tracking-normal">{rec?.source ?? "waiting for trajectories"}</span>
+            <span className="truncate text-dim normal-case tracking-normal">{rec ? rec.source ?? `${rec.run_id ? `${rec.run_id} · ` : ""}chunk ${rec.chunk_id}` : "waiting for trajectories"}</span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {rec?.demo && <DemoBadge />}
@@ -126,22 +126,25 @@ function Skipped({ why }: { why: string }) {
 function StageBody({ stage, rec, reached, active }: { stage: string; rec: Traj; reached: boolean; active: boolean }) {
   if (!reached) return null;
   const qvFailed = rec.failure_mode === "FAILED_QV";
+  // After an error, stages that produced nothing show "skipped" instead of a fake pass.
+  const errSkip = rec.isError && !rec.weak.length;
   switch (stage) {
     case "chunk":
       return <p className="mt-0.5 font-mono text-[11px] text-dim">chunk_id {rec.chunk_id} · Results of Operations</p>;
     case "challenger":
-      return <Typed key={`${rec.chunk_id}-${rec.round_num}`} text={rec.question ?? ""} typing={active} />;
+      return rec.question ? <Typed key={`${rec.chunk_id}-${rec.round_num}`} text={rec.question} typing={active} /> : <Skipped why="error" />;
     case "verifier":
+      if (errSkip && !qvFailed) return <Skipped why="error" />;
       return qvFailed ? (
         <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-fail">{rec.verifier_feedback ?? "failed quality check"}</p>
       ) : (
         <p className="mt-0.5 font-mono text-[11px] text-signal">pass · no leakage · tests reasoning</p>
       );
     case "weak":
-      return rec.weak.length ? <Scores scores={rec.weak} avg={rec.weakAvg} tone="weak" /> : <Skipped why="failed quality check" />;
+      return rec.weak.length ? <Scores scores={rec.weak} avg={rec.weakAvg} tone="weak" /> : <Skipped why={qvFailed ? "failed quality check" : "error"} />;
     case "strong":
       if (rec.strongRan) return <Scores scores={rec.strong} avg={rec.strongAvg} tone="strong" />;
-      return <Skipped why={qvFailed ? "failed quality check" : "weak gate failed, paper's compute shortcut"} />;
+      return <Skipped why={qvFailed ? "failed quality check" : rec.isError ? "error" : "weak gate failed, paper's compute shortcut"} />;
     case "judge":
       return rec.judge_feedback ? (
         <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-mute">{rec.judge_feedback}</p>
@@ -155,6 +158,7 @@ function StageBody({ stage, rec, reached, active }: { stage: string; rec: Traj; 
             <div className="flex items-center gap-2">
               <StatusPill status={rec.status} />
               {rec.failure_mode && <span className="font-mono text-[11px] text-dim">{FAILURE_LABEL[rec.failure_mode]}</span>}
+              {rec.isError && <span className="font-mono text-[11px] text-fail">error</span>}
             </div>
             {rec.gap != null && (
               <span className="font-mono text-xs text-mute">
@@ -162,6 +166,7 @@ function StageBody({ stage, rec, reached, active }: { stage: string; rec: Traj; 
               </span>
             )}
           </div>
+          {rec.isError && <p className="mt-1.5 line-clamp-2 font-mono text-[11px] text-dim">{rec.fail_reason}</p>}
           {rec.strongRan && (
             <div className="mt-2">
               <GapMeter weak={rec.weakAvg} strong={rec.strongAvg} pass={rec.status === "ACCEPTED"} />

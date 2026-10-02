@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CaretDown } from "@phosphor-icons/react";
-import { FAILURE_LABEL, normalize, useJson, type Benchmark, type RawRecord, type Traj } from "@/lib/data";
+import { FAILURE_LABEL, latestRun, useJson, type Benchmark, type RawRecord, type Traj } from "@/lib/data";
 import { DemoBadge, GapMeter, Logo, StatusPill } from "./ui";
 
 const spring = { type: "spring", stiffness: 100, damping: 20 } as const;
@@ -108,7 +108,7 @@ function OurBenchmark() {
 
 function RunLog() {
   const res = useJson<RawRecord[]>("/data/trajectories.json", 5000);
-  const rows = useMemo(() => (res.state === "ready" ? res.data.map(normalize) : []), [res]);
+  const rows = useMemo(() => (res.state === "ready" ? latestRun(res.data) : []), [res]);
   const [open, setOpen] = useState<string | null>(null);
 
   const accepted = rows.filter((r) => r.status === "ACCEPTED");
@@ -127,7 +127,9 @@ function RunLog() {
         <div className="flex items-center gap-3">
           <span className="size-2 animate-breathe rounded-full bg-signal" />
           <p className="text-[15px] font-medium text-fg">Run log</p>
-          <span className="font-mono text-[11px] text-dim">data/trajectories.json · polling every 5s</span>
+          <span className="font-mono text-[11px] text-dim">
+            {rows[0]?.run_id && !rows[0]?.demo ? `${rows[0].run_id} · ` : ""}data/trajectories.json · polling every 5s
+          </span>
         </div>
         {rows.some((r) => r.demo) && <DemoBadge />}
       </div>
@@ -169,7 +171,7 @@ function Row({ r, open, onToggle }: { r: Traj; open: boolean; onToggle: () => vo
         className="grid w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-6 py-4 text-left transition-colors hover:bg-white/[0.02] md:grid-cols-[minmax(0,1.6fr)_120px_minmax(180px,1fr)_70px_24px] md:px-8"
       >
         <span className="min-w-0">
-          <span className="block truncate text-[15px] text-fg">{r.question}</span>
+          <span className="block truncate text-[15px] text-fg">{r.question || "No question produced"}</span>
           <span className="mt-0.5 block font-mono text-[11px] text-dim">
             {r.source ?? `chunk ${r.chunk_id}`} · round {r.round_num}
           </span>
@@ -181,7 +183,9 @@ function Row({ r, open, onToggle }: { r: Traj; open: boolean; onToggle: () => vo
           {r.strongRan ? (
             <GapMeter weak={r.weakAvg} strong={r.strongAvg} pass={r.status === "ACCEPTED"} />
           ) : (
-            <span className="font-mono text-[11px] text-dim">{r.failure_mode ? FAILURE_LABEL[r.failure_mode] : "no scores"} · strong skipped</span>
+            <span className={`font-mono text-[11px] ${r.isError ? "text-fail" : "text-dim"}`}>
+              {r.isError ? "error · chunk ended" : `${r.failure_mode ? FAILURE_LABEL[r.failure_mode] : "no scores"} · strong skipped`}
+            </span>
           )}
         </span>
         <span className={`hidden text-right font-mono text-sm tabular-nums md:block ${r.status === "ACCEPTED" ? "text-signal" : "text-mute"}`}>

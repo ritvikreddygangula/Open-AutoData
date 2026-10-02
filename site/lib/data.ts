@@ -38,6 +38,7 @@ export type Traj = RawRecord & {
   strongAvg: number;
   strongRan: boolean;
   gap: number | null;
+  isError: boolean; // a model outage or unusable reply ended the chunk
 };
 
 export function normalize(r: RawRecord): Traj {
@@ -46,7 +47,14 @@ export function normalize(r: RawRecord): Traj {
   const weakAvg = r.weak_score ?? avg(weak);
   const strongAvg = r.strong_score ?? avg(strong);
   const strongRan = strong.length > 0;
-  return { ...r, weak, strong, weakAvg, strongAvg, strongRan, gap: r.score_gap ?? (strongRan && weak.length ? strongAvg - weakAvg : null) };
+  const isError = Boolean(r.fail_reason?.startsWith("error:"));
+  return { ...r, weak, strong, weakAvg, strongAvg, strongRan, isError, gap: r.score_gap ?? (strongRan && weak.length ? strongAvg - weakAvg : null) };
+}
+
+// The recorder appends every run to the same file; show only the newest one.
+export function latestRun(rows: RawRecord[]): Traj[] {
+  const last = rows.at(-1)?.run_id;
+  return (last ? rows.filter((r) => r.run_id === last) : rows).map(normalize);
 }
 
 export const FAILURE_LABEL: Record<string, string> = {

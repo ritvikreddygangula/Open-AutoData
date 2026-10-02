@@ -99,17 +99,31 @@ That is the only required value. The Snowflake fields are optional. Leave `SNOWF
 ### 3. Run
 
 ```bash
-python -m src.chunks my_filings.csv   # any CSV with CHUNK_ID and CHUNK_TEXT columns → data/chunks.json
-python -m src.agent_graph             # run the loop over data/chunks.json
-pytest                                # run the test suite (no API key needed)
+python -m src.agent_graph --limit 3      # try it on the first 3 chunks of data/chunks.json
+python -m src.agent_graph                # run every chunk
+pytest                                   # run the test suite (no API key needed)
 ```
 
-> `src/agent_graph.py`, which wires the agents into the LangGraph loop, is landing in the `feat/agent-graph` branch. The agents, gate and rubric scoring are already merged and tested.
+`data/chunks.json` already holds 27 cleaned SEC 10-Q chunks. To use your own documents, convert any CSV with `CHUNK_ID` and `CHUNK_TEXT` columns first:
+
+```bash
+python -m src.chunks my_filings.csv      # → data/chunks.json
+```
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--limit N` | all | Only the first N chunks |
+| `--workers N` | 4 | Chunks processed in parallel. Lower it if OpenRouter rate-limits you |
+| `--chunks PATH` | `data/chunks.json` | A chunks `.json` or `.csv` file |
+| `--run-id ID` | `run-<UTC time>` | Tags every record from this run |
+| `--out-dir DIR` | `data/` | Where the output files go |
+
+Each chunk takes a few minutes of model calls. A crash or model outage in one chunk is logged and never stops the others. The run ends with a summary: each chunk's status, rounds used, and `N/M accepted`.
 
 Output:
-- `data/trajectories.json`: one record per round, with the context, question, rubric, all six attempt scores, failure mode and judge notes
+- `data/trajectories.json`: one record per round, with the context, question, rubric, all six attempt scores, failure mode and judge notes. Every run is appended and tagged with its `run_id`.
 - `data/accepted.json`: the accepted pairs
-- Snowflake tables `OPENAUTODATA_TRAJECTORIES` and `OPENAUTODATA_ACCEPTED_SET` when writeback is on (schema in [`sql/schema.sql`](sql/schema.sql))
+- Snowflake tables `OPENAUTODATA_TRAJECTORIES` and `OPENAUTODATA_ACCEPTED_SET` when writeback is on (schema in [`sql/schema.sql`](sql/schema.sql)). A failed Snowflake insert is backed up to `data/snowflake_failed.jsonl` and never stops the loop.
 
 ### 4. Watch it live (optional)
 
@@ -117,7 +131,7 @@ Output:
 cd site && npm install && npm run dev   # http://localhost:3000
 ```
 
-The website replays every round from `data/trajectories.json` and polls it while the pipeline runs. `npm run build` produces a static site in `site/out/` for Vercel or GitHub Pages.
+The website replays the latest run from `data/trajectories.json` and polls it while the pipeline runs. `npm run build` produces a static site in `site/out/` for Vercel or GitHub Pages.
 
 ## Benchmark
 
@@ -141,7 +155,9 @@ src/config.py             model IDs, thresholds, paths
 src/chunks.py             CSV → chunks.json loader
 src/llm.py                OpenRouter client with retries and tolerant JSON parsing
 src/state.py              agent state and the shared trajectory record
+src/agent_graph.py        LangGraph loop, parallel chunk runner, command line
 src/nodes.py              challenger, verifier, solvers, judge, evaluate
+src/recorder.py           writes trajectories, accepted pairs and Snowflake rows
 src/rubric.py             rubric validation and weighted scoring
 src/gate.py               the paper's acceptance gate
 src/default_prompts.py    agent prompts adapted from the paper
@@ -165,7 +181,10 @@ tests/                    pytest suite
 
 ## Team
 
-_TBD_
+- Karthik Reddy Yalala
+- Ritvik Reddy Gangula
+- Arun Teja Reddy Kallam
+- Chinmay Vasisht Naganand
 
 ## License
 

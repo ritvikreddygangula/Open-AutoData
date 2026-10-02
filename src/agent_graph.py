@@ -111,6 +111,7 @@ def main(argv=None) -> None:
     parser.add_argument("--out-dir", type=Path, default=config.DATA_DIR)
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # one line per model call drowns the summary
 
     chunks = load_chunks(args.chunks)[: args.limit]
     recorder = Recorder(args.out_dir / config.TRAJECTORIES_PATH.name, args.out_dir / config.ACCEPTED_PATH.name,

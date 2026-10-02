@@ -50,3 +50,14 @@ def test_cli_runs_the_first_n_chunks_and_prints_a_summary(tmp_path, monkeypatch,
     assert seen == {"ids": ["0", "1"], "run_id": "demo", "workers": 2}
     out = capsys.readouterr().out
     assert "0: REJECTED after 3 rounds (x)" in out and "0/2 accepted" in out
+
+
+def test_cli_hides_per_request_http_logs(tmp_path, monkeypatch):
+    import logging
+
+    chunks = tmp_path / "chunks.json"
+    chunks.write_text(json.dumps([{"chunk_id": 1, "text": "t"}]))
+    monkeypatch.setattr(agent_graph, "run", lambda *args, **kwargs: [])
+    monkeypatch.setattr(agent_graph, "snowflake_sync", lambda: None)
+    agent_graph.main(["--chunks", str(chunks), "--out-dir", str(tmp_path)])
+    assert logging.getLogger("httpx").level == logging.WARNING

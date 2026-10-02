@@ -35,7 +35,8 @@ def test_refinement_lists_failed_questions_by_failure_mode(fake_llm):
     client = fake_llm(FakeClient(as_json(package())))
     history = [
         {"round_num": 1, "question": "What were net sales?", "failure_mode": "TOO_EASY",
-         "fail_reason": "weak_score 80.0 > 65"},
+         "fail_reason": "weak_score 80.0 > 65",
+         "judge_notes": "weak 1: Correct throughout.\nweak 2: Missed the period."},
         {"round_num": 2, "question": "Why did costs rise?", "failure_mode": "FAILED_QV",
          "fail_reason": "context leaks the answer"},
         {"round_num": 3, "question": "Forecast 2027 margin", "failure_mode": "FAILED_ON_STRONG",
@@ -46,6 +47,7 @@ def test_refinement_lists_failed_questions_by_failure_mode(fake_llm):
     node_challenger(chunk_state(round_num=3, history=history))
     user = client.calls[0]["messages"][1]["content"]
     assert 'TOO EASY' in user and '- Round 1: "What were net sales?" (weak_score 80.0 > 65)' in user
+    assert "  Judge notes:\n    weak 1: Correct throughout.\n    weak 2: Missed the period." in user
     assert 'FAILED QUALITY CHECK' in user and "context leaks the answer" in user
     assert 'FAILED ON STRONG' in user and "strong_score 40.0 < 60" in user
     assert 'TOO HARD' in user and "Reconcile every line item" in user

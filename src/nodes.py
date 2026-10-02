@@ -48,17 +48,21 @@ def _filing(state) -> str:
     return f"<filing>\n{state['chunk_text']}\n</filing>"
 
 
+def _failed_round(attempt: dict) -> str:
+    line = f'- Round {attempt["round_num"]}: "{attempt["question"]}" ({attempt["fail_reason"]})'
+    # What each solver attempt got right or missed is the most useful signal for the next question.
+    if notes := attempt.get("judge_notes"):
+        line += "\n  Judge notes:\n" + "\n".join(f"    {note}" for note in notes.splitlines())
+    return line
+
+
 def _challenger_request(state) -> str:
     parts = [_filing(state), "Generate a challenging question-answer pair with a grading rubric from this filing excerpt."]
     history = state.get("history") or []
     if history:
         parts.append("These earlier questions did not meet the acceptance criteria:")
         for mode, title in _FAILURE_GROUPS:
-            lines = [
-                f'- Round {h["round_num"]}: "{h["question"]}" ({h["fail_reason"]})'
-                for h in history
-                if h["failure_mode"] == mode
-            ]
+            lines = [_failed_round(h) for h in history if h["failure_mode"] == mode]
             if lines:
                 parts.append(f"{title}:\n" + "\n".join(lines))
         parts.append(
@@ -244,7 +248,7 @@ def node_evaluate(state) -> dict:
     mode, reasons = failure
     fail_reason = "; ".join(reasons)
     attempt = {"round_num": state["round_num"], "question": state["question"],
-               "failure_mode": mode, "fail_reason": fail_reason}
+               "failure_mode": mode, "fail_reason": fail_reason, "judge_notes": state.get("judge_feedback")}
     return {
         "status": "REJECTED" if state["round_num"] >= config.MAX_ROUNDS else "REVISE",
         "score_gap": gap,

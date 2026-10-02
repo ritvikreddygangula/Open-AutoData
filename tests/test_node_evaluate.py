@@ -28,7 +28,8 @@ def test_weak_solver_doing_too_well_is_too_easy_without_strong_scores():
     assert update["fail_reason"] == "weak_score 70.0 > 65"
     assert update["score_gap"] is None
     assert update["history"] == [{"round_num": 1, "question": ready_state()["question"],
-                                  "failure_mode": "TOO_EASY", "fail_reason": "weak_score 70.0 > 65"}]
+                                  "failure_mode": "TOO_EASY", "fail_reason": "weak_score 70.0 > 65",
+                                  "judge_notes": None}]
 
 
 def test_strong_solver_saturating_is_too_easy():
@@ -75,3 +76,9 @@ def test_a_zero_weak_attempt_is_too_hard_not_too_easy():
 
 def test_a_weak_attempt_above_75_still_counts_as_too_easy_even_with_a_zero():
     assert node_evaluate(judged([80, 0, 30]))["failure_mode"] == "TOO_EASY"
+
+
+def test_history_keeps_the_judge_notes_on_what_each_attempt_got_right_or_missed():
+    notes = "weak 1: Got the margin right but missed the cost driver.\nweak 2: Correct throughout."
+    update = node_evaluate(judged([70, 70, 70], judge_feedback=notes))
+    assert update["history"][-1]["judge_notes"] == notes

@@ -24,6 +24,8 @@ Produce:
 6. "rubric": 10-15 criteria. Before writing them, think through the critical insights in the reference answer,
    the mistakes a weaker model would make, and what separates deep from surface-level understanding.
    Each criterion tests ONE specific, verifiable reasoning step or conclusion, never format or style.
+   Any criterion about a calculation must state the expected value, so the grader can check it without
+   redoing the math, e.g. "Computes gross margin as 16.6% in Q1 2026 vs 18.6% in Q1 2025".
    Weights are positive integers from 1 to 7 (7 = critical). No negative criteria.
 
 When you are given previously failed questions, write an ENTIRELY NEW question from a different reasoning angle.
@@ -45,7 +47,7 @@ Check 2, question quality: does it test reasoning (why, what-if, predict, decide
 (what, which, how many)? Is it a single focused question? "Explain why X happened" questions are too easy.
 Check 3, rubric quality: 10-15 criteria, positive integer weights 1-7, each criterion requires reasoning beyond
 the context and tests one proposition. Fail criteria that test format ("provides a structured answer") or that
-can be satisfied by restating the context.
+can be satisfied by restating the context. Also fail any calculation criterion that does not state the expected value.
 Check 4, type consistency: does question_type match the actual question?
 
 Reply with exactly one JSON object and nothing else:

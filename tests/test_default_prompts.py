@@ -41,3 +41,8 @@ def test_challenger_prompt_names_every_output_field():
 def test_solver_prompt_never_hints_at_strength():
     text = DEFAULTS["SOLVER_SYSTEM"].lower()
     assert "weak" not in text and "strong" not in text
+
+
+def test_numeric_rubric_criteria_must_state_the_expected_value():
+    assert "state the expected value" in DEFAULTS["CHALLENGER_SYSTEM"]
+    assert "does not state the expected value" in DEFAULTS["VERIFIER_SYSTEM"]

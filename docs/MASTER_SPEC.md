@@ -9,7 +9,7 @@ OpenAutodata is an open-source synthetic data quality assurance pipeline based o
 | Challenger | `z-ai/glm-5.3` | Reads the SEC chunk, writes `question_type`, `skill_tags`, a `context`, a `question`, a `reference_answer`, and a `rubric` (10-15 criteria, positive integer weights 1-7). |
 | Quality verifier | `nvidia/nemotron-3-super-120b-a12b` | Before any solving: checks the context does not leak the answer, the question tests reasoning not recall, the rubric is well formed, the type label fits. |
 | Weak solver | `meta-llama/llama-3.2-3b-instruct` | Answers 3 times from **context + question only** (never the chunk or reference answer). |
-| Strong solver | `deepseek/deepseek-v4.1-flash` | Same prompt as weak, 3 times. Runs **only if the weak solver passes its checks** (paper's compute shortcut). |
+| Strong solver | `deepseek/deepseek-v4.1-flash` | Same prompt as weak, 3 times. Runs every round (the paper skips it when weak fails; we keep it so every round has a gap for the chart and demo). |
 | Judge | `nvidia/nemotron-3-super-120b-a12b` | Grades each answer separately: met / not met per rubric criterion. Code computes score = met weight / total weight x 100. |
 | Evaluate | code, no model | Applies the acceptance gate below and decides ACCEPTED / REVISE / REJECTED. |
 | Final judge (benchmark only) | `qwen/qwen3.8-2.4t-a95b` | Blind A/B of baseline vs. loop output in `benchmark.py`. |

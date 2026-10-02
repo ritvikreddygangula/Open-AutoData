@@ -10,7 +10,7 @@ You are the LangGraph Architect. Your objective is to build the multi-agent grap
 
 ## Instructions for Claude Code (`feat/agent-graph`)
 1. Read `MASTER_SPEC.md` for the agents, acceptance gate and record contract.
-2. Wire the nodes in the paper's order: challenger -> verifier -> weak solvers -> judge(weak) -> [weak gate passes? strong solvers -> judge(strong)] -> evaluate. Use `src.gate.weak_gate_failures` to decide whether the strong solver runs.
+2. Wire the nodes in the paper's order: challenger -> verifier -> weak solvers -> judge(weak) -> strong solvers -> judge(strong) -> evaluate. The strong solver runs every round (unlike the paper) so every round has a gap.
 3. Short-circuit to `node_evaluate` when `error` is set or the verifier returns `FAIL`.
 4. After evaluate: `REVISE` loops back to the challenger; `ACCEPTED` saves to `data/accepted.json`; `REJECTED` ends the chunk.
 5. Write every round's `to_record(state)` to `data/trajectories.json`, and call Person 2's `save_trajectory_record` / `save_accepted_record` when `src/snowflake_sync.py` is importable.

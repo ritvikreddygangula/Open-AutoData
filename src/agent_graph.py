@@ -13,7 +13,6 @@ from langgraph.graph import END, START, StateGraph
 
 from src import config
 from src.chunks import load_chunks
-from src.gate import weak_gate_failures
 from src.nodes import node_challenger, node_evaluate, node_judge, node_solvers, node_verifier
 from src.recorder import Recorder
 from src.state import AgentState, initial_state
@@ -30,13 +29,6 @@ def _next_unless_error(next_node: str):
 
 def after_verifier(state) -> str:
     return "evaluate" if state.get("error") or state.get("verifier_verdict") == "FAIL" else "weak_solvers"
-
-
-def after_weak_judge(state) -> str:
-    # Paper's compute saving: the strong solver only runs if the weak solver passed its checks.
-    if state.get("error") or weak_gate_failures(state["weak_attempt_scores"]):
-        return "evaluate"
-    return "strong_solvers"
 
 
 def after_record(state) -> str:
@@ -62,7 +54,8 @@ def build_graph(recorder: Recorder):
     graph.add_conditional_edges("challenger", _next_unless_error("verifier"), ["verifier", "evaluate"])
     graph.add_conditional_edges("verifier", after_verifier, ["weak_solvers", "evaluate"])
     graph.add_conditional_edges("weak_solvers", _next_unless_error("weak_judge"), ["weak_judge", "evaluate"])
-    graph.add_conditional_edges("weak_judge", after_weak_judge, ["strong_solvers", "evaluate"])
+    # Unlike the paper we always run the strong solver: every round then has a gap for the chart and demo.
+    graph.add_conditional_edges("weak_judge", _next_unless_error("strong_solvers"), ["strong_solvers", "evaluate"])
     graph.add_conditional_edges("strong_solvers", _next_unless_error("strong_judge"), ["strong_judge", "evaluate"])
     graph.add_edge("strong_judge", "evaluate")
     graph.add_edge("evaluate", "record")

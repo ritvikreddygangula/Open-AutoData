@@ -52,14 +52,14 @@ def test_failed_quality_check_then_accepted_question(tmp_path, fake_llm):
     assert "context gives the margin" in client.calls_to(CHALLENGER)[1]["messages"][1]["content"]
 
 
-def test_strong_solver_is_skipped_when_weak_does_too_well_and_chunk_stops_after_three_rounds(tmp_path, fake_llm):
+def test_strong_solver_still_runs_on_too_easy_rounds_so_every_round_has_a_gap(tmp_path, fake_llm):
     client = models([PASS_QV] * 3, weak_met=8, strong_met=9)
     final, trajectories, accepted = run(tmp_path, client, fake_llm)
 
     assert final["status"] == "REJECTED" and final["round_num"] == 3
     assert [r["failure_mode"] for r in trajectories] == ["TOO_EASY"] * 3
-    assert client.calls_to(STRONG) == [] and accepted == []
-    assert all(r["strong_answer"] == [] for r in trajectories)
+    assert len(client.calls_to(STRONG)) == 9 and accepted == []
+    assert all(r["strong_score"] == 90.0 and r["score_gap"] == 10.0 for r in trajectories)
 
 
 def test_model_outage_ends_the_chunk_after_one_record(tmp_path, fake_llm):

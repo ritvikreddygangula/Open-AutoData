@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 from pathlib import Path
 
 try:
@@ -24,18 +25,21 @@ ACCEPTED_TABLE = "OPENAUTODATA_ACCEPTED_SET"
 CHUNKS_TABLE = "SOURCE_CHUNKS"
 
 TRAJECTORY_COLS = [
-    "RUN_ID", "ARM", "CHUNK_ID", "ROUND_NUM", "QUESTION", "REFERENCE_ANSWER",
-    "WEAK_ANSWER", "STRONG_ANSWER", "WEAK_SCORE", "STRONG_SCORE", "SCORE_GAP",
-    "JUDGE_FEEDBACK", "STATUS",
+    "RUN_ID", "ARM", "CHUNK_ID", "ROUND_NUM", "QUESTION_TYPE", "CONTEXT", "QUESTION",
+    "REFERENCE_ANSWER", "RUBRIC", "WEAK_ANSWER", "STRONG_ANSWER", "WEAK_SCORE",
+    "STRONG_SCORE", "SCORE_GAP", "JUDGE_FEEDBACK", "STATUS", "FAILURE_MODE", "FAIL_REASON",
 ]
 ACCEPTED_COLS = [
-    "RUN_ID", "ARM", "CHUNK_ID", "ROUND_NUM", "QUESTION", "REFERENCE_ANSWER",
-    "WEAK_SCORE", "STRONG_SCORE", "SCORE_GAP", "JUDGE_FEEDBACK", "STATUS",
+    "RUN_ID", "ARM", "CHUNK_ID", "ROUND_NUM", "QUESTION_TYPE", "CONTEXT", "QUESTION",
+    "REFERENCE_ANSWER", "RUBRIC", "WEAK_SCORE", "STRONG_SCORE", "SCORE_GAP",
+    "JUDGE_FEEDBACK", "STATUS",
 ]
 NUMERIC_COLS = {"CHUNK_ID", "ROUND_NUM", "WEAK_SCORE", "STRONG_SCORE", "SCORE_GAP"}
+VARIANT_COLS = {"RUBRIC"}
 
 log = logging.getLogger("snowflake_sync")
 _conn = None
+_lock = threading.RLock()
 
 
 def _config():
@@ -83,9 +87,13 @@ def close():
 
 
 def _execute(sql, params=None, fetch=False):
-    global _conn
     if not enabled():
         return None
+    with _lock:
+        return _execute_locked(sql, params, fetch)
+
+
+def _execute_locked(sql, params, fetch):
     for attempt in range(2):
         try:
             cur = _get_connection().cursor()
@@ -123,6 +131,8 @@ def _params(rec, cols):
         value = rec.get(col.lower())
         if col in NUMERIC_COLS:
             value = _to_float(value)
+        elif col in VARIANT_COLS:
+            value = None if value is None else json.dumps(value, default=str)
         elif value is not None and not isinstance(value, str):
             value = json.dumps(value, default=str)
         values.append(value)
@@ -132,9 +142,10 @@ def _params(rec, cols):
 
 def _backup(table, rec):
     try:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        with FAILED_PATH.open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"table": table, "record": rec}, default=str) + "\n")
+        with _lock:
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            with FAILED_PATH.open("a", encoding="utf-8") as f:
+                f.write(json.dumps({"table": table, "record": rec}, default=str) + "\n")
     except Exception as e:
         log.warning("Could not write backup record: %s", e)
 
@@ -142,7 +153,7 @@ def _backup(table, rec):
 def _insert(table, cols, record):
     try:
         rec = _normalize(record)
-        placeholders = ", ".join(["%s"] * len(cols))
+        placeholders = ", ".join("PARSE_JSON(%s)" if c in VARIANT_COLS else "%s" for c in cols)
         sql = (
             f"INSERT INTO {table} ({', '.join(cols)}, RAW) "
             f"SELECT {placeholders}, PARSE_JSON(%s)"
@@ -193,23 +204,27 @@ def _load_local_chunks():
     return []
 
 
+def _normalize_chunk(c):
+    return {
+        "chunk_id": str(c.get("chunk_id") or c.get("CHUNK_ID")).strip(),
+        "text": c.get("text") or c.get("chunk_text") or c.get("CHUNK_TEXT") or "",
+        "doc_id": c.get("doc_id") or c.get("sec_document_id") or c.get("SEC_DOCUMENT_ID"),
+        "adsh": c.get("adsh") or c.get("ADSH"),
+    }
+
+
 def load_chunks(limit=None):
     sql = f"SELECT CHUNK_ID, SEC_DOCUMENT_ID, ADSH, CHUNK_TEXT FROM {CHUNKS_TABLE} ORDER BY CHUNK_ID"
     if limit:
         sql += f" LIMIT {int(limit)}"
     rows = _execute(sql, fetch=True)
     if rows:
-        chunks = [
-            {"chunk_id": int(r[0]), "sec_document_id": r[1], "adsh": r[2], "chunk_text": r[3]}
-            for r in rows
-        ]
+        raw = [{"chunk_id": r[0], "doc_id": r[1], "adsh": r[2], "text": r[3]} for r in rows]
     else:
-        chunks = _load_local_chunks()
-        for c in chunks:
-            c["chunk_id"] = int(c["chunk_id"])
-        if limit:
-            chunks = chunks[: int(limit)]
-    return chunks
+        raw = _load_local_chunks()
+    chunks = [_normalize_chunk(c) for c in raw]
+    chunks = [c for c in chunks if c["text"].strip()]
+    return chunks[: int(limit)] if limit else chunks
 
 
 def retry_failed():
@@ -239,7 +254,8 @@ if __name__ == "__main__":
     print("Chunks loaded:", len(chunks))
     test = {
         "run_id": "smoke_test", "arm": "test", "chunk_id": 0, "round_num": 0,
-        "question": "test", "reference_answer": "test", "weak_score": 40,
+        "question": "test", "reference_answer": "test", "context": "test",
+        "rubric": [{"criterion": "test", "weight": 1}], "failure_mode": "TOO_EASY", "weak_score": 40,
         "strong_score": 90, "judge_feedback": "test", "status": "SMOKE_TEST",
     }
     print("Trajectory insert:", save_trajectory_record(test))

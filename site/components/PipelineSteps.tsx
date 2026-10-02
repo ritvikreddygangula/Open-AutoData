@@ -27,7 +27,7 @@ const STEPS = [
   {
     t: "Solve",
     logos: ["meta", "deepseek"],
-    d: "Llama 3.2 3B answers three times from the context alone, never the filing or the reference answer. DeepSeek V4.1 Flash gets the identical prompt three times, but only if the weak solver struggled.",
+    d: "Llama 3.2 3B answers three times from the context alone, never the filing or the reference answer. DeepSeek V4.1 Flash gets the identical prompt three times, every round, so each round has a gap.",
     io: "context + question → 3 weak, then 3 strong answers",
   },
   {

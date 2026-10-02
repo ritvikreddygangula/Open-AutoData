@@ -144,7 +144,7 @@ function StageBody({ stage, rec, reached, active }: { stage: string; rec: Traj; 
       return rec.weak.length ? <Scores scores={rec.weak} avg={rec.weakAvg} tone="weak" /> : <Skipped why={qvFailed ? "failed quality check" : "error"} />;
     case "strong":
       if (rec.strongRan) return <Scores scores={rec.strong} avg={rec.strongAvg} tone="strong" />;
-      return <Skipped why={qvFailed ? "failed quality check" : rec.isError ? "error" : "weak gate failed, paper's compute shortcut"} />;
+      return <Skipped why={qvFailed ? "failed quality check" : "error"} />;
     case "judge":
       return rec.judge_feedback ? (
         <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-mute">{rec.judge_feedback}</p>

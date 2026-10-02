@@ -60,15 +60,24 @@
       90,
       85
     ],
-    "strong_attempt_scores": [],
+    "strong_attempt_scores": [
+      90,
+      95,
+      92.5
+    ],
     "weak_score": 85.0,
-    "strong_score": null,
-    "score_gap": null,
-    "judge_feedback": "weak 1: correct, single-step arithmetic. weak 2: correct. weak 3: correct, minor rounding.",
+    "strong_score": 92.5,
+    "score_gap": 7.5,
+    "judge_feedback": "weak 1: correct, single-step arithmetic. weak 2: correct. weak 3: correct, minor rounding. strong 1: complete. strong 2: complete. strong 3: minor rounding only.",
     "verifier_feedback": "PASS",
     "status": "REVISE",
     "failure_mode": "TOO_EASY",
-    "fail_reason": "weak_score 85.0 > 65; best weak attempt 90 > 75"
+    "fail_reason": "weak_score 85.0 > 65; best weak attempt 90 > 75",
+    "strong_answer": [
+      "Strong attempt 1: works through every figure in the context and states the result.",
+      "Strong attempt 2: works through every figure in the context and states the result.",
+      "Strong attempt 3: works through every figure in the context and states the result."
+    ]
   },
   {
     "demo": true,
@@ -207,15 +216,24 @@
       62.5,
       77.5
     ],
-    "strong_attempt_scores": [],
+    "strong_attempt_scores": [
+      85,
+      80,
+      87.5
+    ],
     "weak_score": 69.2,
-    "strong_score": null,
-    "score_gap": null,
-    "judge_feedback": "weak 1: correct but no working. weak 2: rounding error. weak 3: correct.",
+    "strong_score": 84.2,
+    "score_gap": 15.0,
+    "judge_feedback": "weak 1: correct but no working. weak 2: rounding error. weak 3: correct. strong 1: complete. strong 2: complete. strong 3: minor rounding only.",
     "verifier_feedback": "PASS",
     "status": "REVISE",
     "failure_mode": "TOO_EASY",
-    "fail_reason": "weak_score 69.2 > 65; best weak attempt 77.5 > 75"
+    "fail_reason": "weak_score 69.2 > 65; best weak attempt 77.5 > 75",
+    "strong_answer": [
+      "Strong attempt 1: works through every figure in the context and states the result.",
+      "Strong attempt 2: works through every figure in the context and states the result.",
+      "Strong attempt 3: works through every figure in the context and states the result."
+    ]
   },
   {
     "demo": true,
@@ -355,10 +373,10 @@
     "strong_score": null,
     "score_gap": null,
     "judge_feedback": null,
-    "verifier_feedback": "question_quality: RECALL; leakage: LEAKS_ANSWER: the context states the figure the question asks for",
+    "verifier_feedback": "leakage: LEAKS_ANSWER; question_quality: RECALL: the context states the figure the question asks for",
     "status": "REVISE",
     "failure_mode": "FAILED_QV",
-    "fail_reason": "question_quality: RECALL; leakage: LEAKS_ANSWER: context states the answer verbatim"
+    "fail_reason": "leakage: LEAKS_ANSWER; question_quality: RECALL: the context states the figure the question asks for"
   },
   {
     "demo": true,
@@ -497,14 +515,23 @@
       0,
       25
     ],
-    "strong_attempt_scores": [],
+    "strong_attempt_scores": [
+      70,
+      62.5,
+      75
+    ],
     "weak_score": 18.3,
-    "strong_score": null,
-    "score_gap": null,
-    "judge_feedback": "weak 2: answered a different question, no criteria met.",
+    "strong_score": 69.2,
+    "score_gap": 50.9,
+    "judge_feedback": "weak 2: answered a different question, no criteria met. strong 1: complete. strong 2: complete. strong 3: minor rounding only.",
     "verifier_feedback": "PASS",
     "status": "REJECTED",
     "failure_mode": "TOO_HARD",
-    "fail_reason": "a weak attempt scored 0"
+    "fail_reason": "a weak attempt scored 0",
+    "strong_answer": [
+      "Strong attempt 1: works through every figure in the context and states the result.",
+      "Strong attempt 2: works through every figure in the context and states the result.",
+      "Strong attempt 3: works through every figure in the context and states the result."
+    ]
   }
 ]

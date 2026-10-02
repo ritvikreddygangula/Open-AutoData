@@ -184,7 +184,7 @@ function Row({ r, open, onToggle }: { r: Traj; open: boolean; onToggle: () => vo
             <GapMeter weak={r.weakAvg} strong={r.strongAvg} pass={r.status === "ACCEPTED"} />
           ) : (
             <span className={`font-mono text-[11px] ${r.isError ? "text-fail" : "text-dim"}`}>
-              {r.isError ? "error · chunk ended" : `${r.failure_mode ? FAILURE_LABEL[r.failure_mode] : "no scores"} · strong skipped`}
+              {r.isError ? "error · chunk ended" : `${r.failure_mode ? FAILURE_LABEL[r.failure_mode] : "no scores"} · not solved`}
             </span>
           )}
         </span>

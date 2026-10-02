@@ -15,7 +15,7 @@ We run it on real SEC 10-Q filings pulled from Snowflake and write the accepted 
 
 To fine-tune a model you need good question-answer pairs. Large labs pay human annotators to write and check them. Everyone else generates them with an LLM, and almost nobody checks the output: questions end up too easy (the model already knows the answer), unanswerable from the source, or paired with a wrong reference answer.
 
-OpenAutodata implements the **Agentic Self-Instruct** loop from Meta FAIR's [AutoData](https://facebookresearch.github.io/RAM/blogs/autodata/) paper ([arXiv:2606.25996](https://arxiv.org/abs/2606.25996)). The idea: a good training example sits in the gap between what a weak model can do and what a strong model can do. Meta measured a weak/strong gap of **34 points** for data from this loop, versus **1.9 points** for single-shot CoT Self-Instruct.
+OpenAutodata implements the **Agentic Self-Instruct** loop from Meta FAIR's [AutoData](https://facebookresearch.github.io/RAM/blogs/autodata/) paper ([arXiv:2606.25996](https://arxiv.org/abs/2606.25996)). The idea: a good training example sits in the gap between what a weak model can do and what a strong model can do. Meta measured a weak/strong gap of **31.4 points** for data from this loop, versus **1.9 points** for single-shot CoT Self-Instruct (paper Table 1).
 
 ### The agents
 
@@ -24,9 +24,11 @@ OpenAutodata implements the **Agentic Self-Instruct** loop from Meta FAIR's [Aut
 | 1 | **Challenger** | Reads one filing chunk and writes a **context** (only the facts the question needs, without the answer), a **question**, a **reference answer**, and a **rubric** of 10 to 15 criteria with integer weights 1 to 7. |
 | 2 | **Quality verifier** | Before any solving: checks the context does not leak the answer, the question tests reasoning rather than recall, and every calculation criterion states its expected value. |
 | 3 | **Weak solver** | Answers 3 times from the **context and question only**. It never sees the filing or the reference answer. |
-| 4 | **Strong solver** | Same prompt, 3 times. Runs **only if the weak solver struggled** (the paper's compute shortcut). |
+| 4 | **Strong solver** | Same prompt, 3 times, **every round**. The paper skips it when the weak solver already failed the gate, to save compute; we keep it so every round has a weak/strong gap for the benchmark and the run log. |
 | 5 | **Rubric judge** | Grades **each answer separately**, met or not met per criterion. It **never sees the reference answer**. Code turns the verdicts into a weighted 0 to 100 score. |
 | 6 | **Evaluate** (code) | Applies the acceptance gate below and returns ACCEPTED, REVISE or REJECTED. |
+
+The quality verifier and the rubric judge run on the same model (Nemotron 3 Super), with different prompts.
 
 ### The acceptance gate (paper Fig. 7)
 
@@ -42,6 +44,8 @@ OpenAutodata implements the **Agentic Self-Instruct** loop from Meta FAIR's [Aut
 When a round fails, it is labelled `TOO_EASY`, `TOO_HARD`, `FAILED_ON_STRONG` or `FAILED_QV`. The Challenger then sees every earlier failed question with the judge's notes and must write an entirely new question from a different angle. After 3 failed rounds the chunk is discarded and the reason is logged.
 
 ![OpenAutodata data flow](Data_flow.png)
+
+_The diagram predates the quality verifier, which runs between the Challenger and the solvers._
 
 ## Models
 
@@ -79,7 +83,6 @@ git clone https://github.com/ritvikreddygangula/Open-AutoData.git
 cd Open-AutoData
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-pip install snowflake-connector-python               # optional, only for Snowflake writeback
 ```
 
 ### 2. Set up `.env`
@@ -124,6 +127,7 @@ Output:
 - `data/trajectories.json`: one record per round, with the context, question, rubric, all six attempt scores, failure mode and judge notes. Every run is appended and tagged with its `run_id`.
 - `data/accepted.json`: the accepted pairs
 - Snowflake tables `OPENAUTODATA_TRAJECTORIES` and `OPENAUTODATA_ACCEPTED_SET` when writeback is on (schema in [`sql/schema.sql`](sql/schema.sql)). A failed Snowflake insert is backed up to `data/snowflake_failed.jsonl` and never stops the loop.
+- Snowflake views `V_RESULTS_ROWS` and `V_RESULTS_SUMMARY` ([`sql/results.sql`](sql/results.sql)) compare the latest loop run with the latest baseline run.
 
 ### 4. Watch it live (optional)
 
@@ -151,6 +155,7 @@ data/chunks.json          cleaned SEC text chunks
 data/trajectories.json    every round of every chunk
 data/accepted.json        the accepted dataset
 sql/schema.sql            Snowflake tables
+sql/results.sql           Snowflake views comparing loop and baseline runs
 src/config.py             model IDs, thresholds, paths
 src/chunks.py             CSV → chunks.json loader
 src/llm.py                OpenRouter client with retries and tolerant JSON parsing
@@ -175,7 +180,7 @@ tests/                    pytest suite
 
 ## Credits
 
-- Method and acceptance thresholds from Meta FAIR's AutoData / Agentic Self-Instruct: Kulikov, Whitehouse, Wu, Nie, Saha, Helenowski, Yuan, Golovneva, Lanchantin, Bachrach, Foerster, Li, Fang, Sukhbaatar, Weston. [Blog](https://facebookresearch.github.io/RAM/blogs/autodata/) · [arXiv:2606.25996](https://arxiv.org/abs/2606.25996). Meta's version uses Kimi-K2.5 as orchestrator and judge and Qwen3.5 4B / 397B as solvers; we use a different set of open-weight models.
+- Method and acceptance thresholds from Meta FAIR's AutoData / Agentic Self-Instruct: Kulikov, Whitehouse, Wu, Nie, Saha, Helenowski, Yuan, Golovneva, Lanchantin, Bachrach, Foerster, Li, Fang, Sukhbaatar, Weston. [Blog](https://facebookresearch.github.io/RAM/blogs/autodata/) · [arXiv:2606.25996](https://arxiv.org/abs/2606.25996). Meta's version uses Kimi-K2.6 as orchestrator and judge and Qwen3.5 4B / 397B as solvers; we use a different set of open-weight models.
 - SEC filing data via Snowflake Marketplace.
 - Model logos in `site/public/logos` from [LobeHub Icons](https://github.com/lobehub/lobe-icons) (MIT).
 

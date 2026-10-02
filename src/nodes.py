@@ -7,7 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 from src import config, llm
 from src.default_prompts import get_prompt
-from src.rubric import validate_rubric
+from src.gate import average
+from src.rubric import parse_verdicts, score_answer, validate_rubric
 
 CHALLENGER_TEMPERATURE = 0.7
 
@@ -168,3 +169,38 @@ def node_solvers(state, role: str) -> dict:
     except llm.LLMError as e:
         return {"error": f"solver: {role} failed: {e}"}
     return {f"{role}_answers": answers}
+
+
+class _UnusableGrade(Exception):
+    pass
+
+
+def _judge_request(state, answer: str) -> str:
+    criteria = "\n".join(f"{i}. {item['criterion']}" for i, item in enumerate(state["rubric"], 1))
+    return f"QUESTION:\n{state['question']}\n\nRUBRIC:\n{criteria}\n\nRESPONSE:\n<response>\n{answer}\n</response>"
+
+
+def _grade(state, answer: str) -> tuple[float, str]:
+    messages = [_system("JUDGE_SYSTEM"), {"role": "user", "content": _judge_request(state, answer)}]
+    reply = llm.chat_json("judge", messages, 0)
+    verdicts = parse_verdicts(reply.get("verdicts"), len(state["rubric"])) if reply else None
+    if verdicts is None:
+        raise _UnusableGrade("no usable verdict list")
+    return score_answer(state["rubric"], verdicts), str(reply.get("note") or "").strip()
+
+
+def node_judge(state, role: str) -> dict:
+    """Grade each of one solver's answers against the rubric; code turns verdicts into 0-100 scores."""
+    if role not in _SOLVER_ROLES:
+        raise ValueError(f"unknown solver role {role!r}")
+    answers = state[f"{role}_answers"]
+    try:
+        with ThreadPoolExecutor(max_workers=len(answers)) as pool:
+            grades = list(pool.map(lambda answer: _grade(state, answer), answers))
+    except (llm.LLMError, _UnusableGrade) as e:
+        return {"error": f"judge: grading {role} answers failed: {e}"}
+
+    scores = [score for score, _ in grades]
+    notes = [f"{role} {i}: {note}" for i, (_, note) in enumerate(grades, 1)]
+    feedback = "\n".join(filter(None, [state.get("judge_feedback"), *notes]))
+    return {f"{role}_attempt_scores": scores, f"{role}_score": average(scores), "judge_feedback": feedback}

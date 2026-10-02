@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CaretDown } from "@phosphor-icons/react";
-import { FAILURE_LABEL, latestRun, useJson, type Benchmark, type RawRecord, type Traj } from "@/lib/data";
+import { FAILURE_LABEL, latestRun, useJson, type RawRecord, type Traj } from "@/lib/data";
 import { DemoBadge, GapMeter, Logo, StatusPill } from "./ui";
 
 const spring = { type: "spring", stiffness: 100, damping: 20 } as const;
@@ -15,6 +15,7 @@ export default function Results() {
         <PaperBars />
         <OurBenchmark />
       </div>
+      <BenchmarkChart />
       <RunLog />
     </div>
   );
@@ -51,58 +52,55 @@ function PaperBars() {
       <p className="mt-4 text-xl font-medium tracking-tight text-fg">Weak/strong gap, in points</p>
       <div className="mt-8 space-y-7">
         <Bar label="CoT Self-Instruct" value={1.9} max={40} note="single-shot generation" />
-        <Bar label="Agentic Self-Instruct" value={34} max={40} accent note="the loop OpenAutodata implements" />
+        <Bar label="Agentic Self-Instruct" value={31.4} max={40} accent note="the loop OpenAutodata implements" />
       </div>
     </div>
   );
 }
 
+// First blind A/B run (scripts by Person 3). Small sample: read it as a smoke test, not a result.
+const FIRST_RUN = { pairs: 2, baseline: 2.5, openautodata: 6.0, preferred: 2, harder: 2, moreValid: 0 };
+
 function OurBenchmark() {
-  const res = useJson<Benchmark>("/data/benchmark.json", 10000);
+  const r = FIRST_RUN;
   return (
     <div className="rounded-[1.75rem] border border-line bg-ink-2 p-6 md:p-8">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <Logo name="qwen" className="size-4 text-fg" />
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-dim">Ours · blind A/B, Qwen3.8 judge</p>
-        </div>
+      <div className="flex items-center gap-2.5">
+        <Logo name="qwen" className="size-4 text-fg" />
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-dim">Ours · blind A/B, Qwen3.8 judge</p>
       </div>
       <p className="mt-4 text-xl font-medium tracking-tight text-fg">Same SEC chunks. Single-shot vs OpenAutodata.</p>
-
-      {res.state === "loading" && (
-        <div className="mt-8 space-y-6">
-          {[0, 1].map((i) => (
-            <div key={i} className="relative h-12 overflow-hidden rounded-xl bg-white/[0.04]">
-              <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {res.state === "error" && (
-        <div className="mt-8 rounded-2xl border border-dashed border-line-2 p-6">
-          <p className="text-[15px] text-fg">Benchmark run pending.</p>
-          <p className="mt-2 text-sm leading-relaxed text-mute">
-            The head-to-head runs at the end of the build. This card fills itself in once the script writes{" "}
-            <code className="font-mono text-fg">data/benchmark.json</code>.
-          </p>
-          <code className="mt-4 block rounded-lg bg-ink px-3 py-2 font-mono text-xs text-signal">$ python -m src.benchmark</code>
-        </div>
-      )}
-
-      {res.state === "ready" && (
-        <div className="mt-8 space-y-7">
-          <Bar label="Single-shot baseline" value={+res.data.baseline_gap.toFixed(1)} max={40} note={`weak ${res.data.baseline_weak.toFixed(1)} · strong ${res.data.baseline_strong.toFixed(1)}`} />
-          <Bar label="OpenAutodata" value={+res.data.openautodata_gap.toFixed(1)} max={40} accent note={`weak ${res.data.openautodata_weak.toFixed(1)} · strong ${res.data.openautodata_strong.toFixed(1)}`} />
-          {res.data.judge_preference_pct != null && (
-            <p className="text-sm text-mute">
-              Blind judge preferred OpenAutodata in <span className="font-mono text-signal">{res.data.judge_preference_pct.toFixed(1)}%</span> of pairs
-              {res.data.n ? ` (n = ${res.data.n})` : ""}.
-            </p>
-          )}
-        </div>
-      )}
+      <div className="mt-8 space-y-7">
+        <Bar label="Single-shot baseline" value={r.baseline} max={10} note="difficulty, 1-10, independent judge" />
+        <Bar label="OpenAutodata" value={r.openautodata} max={10} accent note={`+${(r.openautodata - r.baseline).toFixed(1)} harder`} />
+      </div>
+      <p className="mt-6 text-sm leading-relaxed text-mute">
+        The judge picked OpenAutodata as harder in <span className="font-mono text-signal">{r.harder} of {r.pairs}</span> pairs and preferred
+        it overall in <span className="font-mono text-signal">{r.preferred} of {r.pairs}</span>, but rated it more valid in{" "}
+        <span className="font-mono text-fg">{r.moreValid} of {r.pairs}</span>.
+      </p>
+      <p className="mt-3 font-mono text-[11px] text-dim">First run · only {r.pairs} pairs judged · a larger run is next</p>
     </div>
+  );
+}
+
+function BenchmarkChart() {
+  return (
+    <figure className="overflow-hidden rounded-[1.75rem] border border-line bg-ink-2 p-3 md:p-4">
+      <a href="/benchmark.png" target="_blank" rel="noreferrer" aria-label="Open the benchmark chart full size">
+        {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+        <img
+          src="/benchmark.png"
+          alt="Benchmark: difficulty 2.5 for single-shot baseline vs 6.0 for OpenAutodata; blind judge preferred OpenAutodata in 100% of pairs, harder in 100%, more valid in 0%; 2 pairs judged."
+          width={1600}
+          height={727}
+          className="h-auto w-full rounded-[1.25rem]"
+        />
+      </a>
+      <figcaption className="px-2 pt-3 font-mono text-[11px] text-dim">
+        Blind A/B on 2 SEC chunks. Baseline items have no rubric, so they are compared by the judge only.
+      </figcaption>
+    </figure>
   );
 }
 

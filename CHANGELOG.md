@@ -50,3 +50,4 @@
 ## docs/readme-mermaid
 
 - `72aeb50` Replace the README data flow image with a Mermaid flowchart
+- `9711b1a` Show the first blind benchmark result on the website

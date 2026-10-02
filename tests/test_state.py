@@ -23,14 +23,19 @@ def test_initial_state_can_tag_another_arm():
 
 
 def test_record_fields_lead_with_run_and_arm_like_the_schema():
-    assert RECORD_FIELDS == ("run_id", "arm") + CONTRACT + ("fail_reason", "timestamp")
+    assert RECORD_FIELDS == (
+        "run_id", "arm", "chunk_id", "round_num", "question", "reference_answer",
+        "weak_answer", "strong_answer",
+        "weak_score", "strong_score", "score_gap", "judge_feedback", "status",
+        "fail_reason", "timestamp",
+    )
 
 
 def test_to_record_keeps_only_contract_fields():
     state = {
         **initial_state("4", "long chunk text", run_id="run-1"),
         "round_num": 2, "question": "Q?", "reference_answer": "A",
-        "weak_answers": ["w"], "strong_answers": ["s"],
+        "weak_answers": ["w1", "w2", "w3"], "strong_answers": ["s1", "s2", "s3"],
         "weak_score": 40.0, "strong_score": 80.0, "score_gap": 40.0,
         "judge_feedback": "good", "status": "ACCEPTED",
     }
@@ -38,6 +43,8 @@ def test_to_record_keeps_only_contract_fields():
     assert tuple(record) == RECORD_FIELDS
     assert record["score_gap"] == 40.0 and record["status"] == "ACCEPTED"
     assert record["run_id"] == "run-1" and record["arm"] == "loop"
+    assert record["weak_answer"] == ["w1", "w2", "w3"]
+    assert record["strong_answer"] == ["s1", "s2", "s3"]
     assert "chunk_text" not in record and "weak_answers" not in record
 
 
@@ -46,3 +53,13 @@ def test_to_record_fills_missing_fields_with_none_and_is_json_safe():
     assert record["question"] is None and record["weak_score"] is None
     assert record["timestamp"].endswith("+00:00")
     json.dumps(record)
+
+
+def test_snowflake_sync_stores_all_three_answers_per_solver():
+    from src.snowflake_sync import TRAJECTORY_COLS, _params
+
+    state = {**initial_state("4", "t", run_id="run-1"), "weak_answers": ["w1", "w2", "w3"]}
+    row = dict(zip(TRAJECTORY_COLS, _params(to_record(state), TRAJECTORY_COLS)))
+    assert row["RUN_ID"] == "run-1" and row["ARM"] == "loop"
+    assert json.loads(row["WEAK_ANSWER"]) == ["w1", "w2", "w3"]
+    assert json.loads(row["STRONG_ANSWER"]) == []

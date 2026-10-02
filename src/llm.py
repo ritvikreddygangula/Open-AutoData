@@ -60,10 +60,8 @@ JSON_NUDGE = "Reply again with ONLY a single valid JSON object. No prose, no cod
 _TRAILING_COMMA = re.compile(r'("(?:\\.|[^"\\])*")|,\s*([}\]])')
 
 
-def _first_object(text: str) -> str | None:
-    start = text.find("{")
-    if start == -1:
-        return None
+def _object_at(text: str, start: int) -> str | None:
+    """Return the balanced {...} block opening at text[start], or None if it never closes."""
     depth, in_string, escaped = 0, False, False
     for i, ch in enumerate(text[start:], start):
         if in_string:
@@ -84,16 +82,27 @@ def _first_object(text: str) -> str | None:
     return None
 
 
-def parse_json(text: str) -> dict | None:
-    candidate = _first_object(text or "")
-    if candidate is None:
-        return None
+def _load_object(candidate: str) -> dict | None:
+    # Second attempt drops trailing commas; group 1 matches string literals so commas inside them survive.
     for attempt in (candidate, _TRAILING_COMMA.sub(lambda m: m.group(1) or m.group(2), candidate)):
         try:
             parsed = json.loads(attempt)
         except json.JSONDecodeError:
             continue
         return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+def parse_json(text: str) -> dict | None:
+    """Return the first JSON object in a model reply, skipping prose and brace text that isn't JSON."""
+    text = text or ""
+    start = text.find("{")
+    while start != -1:
+        candidate = _object_at(text, start)
+        parsed = _load_object(candidate) if candidate else None
+        if parsed is not None:
+            return parsed
+        start = text.find("{", start + 1)
     return None
 
 

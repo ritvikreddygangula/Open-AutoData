@@ -20,6 +20,10 @@ def test_parse_json_respects_braces_inside_strings():
     assert parse_json(text) == {"question": 'What is {x} in "Q1"?', "n": {"a": 1}}
 
 
+def test_parse_json_skips_brace_text_that_is_not_json():
+    assert parse_json('Use the format {score}. {"score": 80}') == {"score": 80}
+
+
 def test_parse_json_keeps_commas_inside_strings():
     assert parse_json('{"a": "x,}", "b": 1}') == {"a": "x,}", "b": 1}
 

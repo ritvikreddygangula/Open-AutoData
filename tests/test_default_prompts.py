@@ -46,3 +46,8 @@ def test_solver_prompt_never_hints_at_strength():
 def test_numeric_rubric_criteria_must_state_the_expected_value():
     assert "state the expected value" in DEFAULTS["CHALLENGER_SYSTEM"]
     assert "does not state the expected value" in DEFAULTS["VERIFIER_SYSTEM"]
+
+
+def test_verifier_does_not_count_multi_step_calculation_as_leakage():
+    text = DEFAULTS["VERIFIER_SYSTEM"]
+    assert "Providing the figures needed for a multi-step calculation is NOT leakage" in text

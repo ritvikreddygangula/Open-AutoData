@@ -43,6 +43,9 @@ question_type, context, question, rubric. The solver will see only the context a
 
 Check 1, leakage: read the context and question together and try to answer using only the context by paraphrasing
 or combining its sentences. If you can build a reasonable answer without genuine reasoning, it leaks the answer.
+Providing the figures needed for a multi-step calculation is NOT leakage: working through those figures is the
+reasoning we want to test. It IS leakage when the context states the result, an intermediate result the question
+hinges on, or management's explanation that the question asks the solver to work out.
 Check 2, question quality: does it test reasoning (why, what-if, predict, decide, reconcile) or just recall
 (what, which, how many)? Is it a single focused question? "Explain why X happened" questions are too easy.
 Check 3, rubric quality: 10-15 criteria, positive integer weights 1-7, each criterion requires reasoning beyond

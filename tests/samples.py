@@ -39,4 +39,4 @@ def chunk_state(**overrides):
 
 def ready_state(**overrides):
     """State right after the challenger wrote a package."""
-    return chunk_state(round_num=1, **{**package(), **overrides})
+    return chunk_state(**{"round_num": 1, **package(), **overrides})

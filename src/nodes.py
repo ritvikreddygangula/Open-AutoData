@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from src import config, llm
 from src.default_prompts import get_prompt
-from src.gate import average
+from src.gate import average, strong_gate_failures, weak_gate_failures
 from src.rubric import parse_verdicts, score_answer, validate_rubric
 
 CHALLENGER_TEMPERATURE = 0.7
@@ -204,3 +204,50 @@ def node_judge(state, role: str) -> dict:
     notes = [f"{role} {i}: {note}" for i, (_, note) in enumerate(grades, 1)]
     feedback = "\n".join(filter(None, [state.get("judge_feedback"), *notes]))
     return {f"{role}_attempt_scores": scores, f"{role}_score": average(scores), "judge_feedback": feedback}
+
+
+def _rejected_by_error(reason: str) -> dict:
+    # Infrastructure failures end the chunk and are never fed back as question feedback (paper Fig. 7).
+    return {"status": "REJECTED", "failure_mode": None, "fail_reason": f"error: {reason}"}
+
+
+def _failure(state) -> tuple[str, list[str]] | None:
+    """The round's failure mode and reasons, or None if the question is accepted."""
+    if state.get("verifier_verdict") == "FAIL":
+        return "FAILED_QV", [state.get("verifier_feedback") or "quality check failed"]
+    if failures := weak_gate_failures(state["weak_attempt_scores"]):
+        return "TOO_EASY", failures
+    if failures := strong_gate_failures(state["weak_score"], state["strong_attempt_scores"]):
+        # Once the weak gate passed, a failing strong gate is either saturation or a gap that is too small.
+        saturated = state["strong_score"] >= config.STRONG_MAX
+        return ("TOO_EASY" if saturated else "FAILED_ON_STRONG"), failures
+    return None
+
+
+def node_evaluate(state) -> dict:
+    """Apply the acceptance gate and decide: ACCEPTED, REVISE (new question) or REJECTED (out of rounds)."""
+    if state.get("error"):
+        return _rejected_by_error(state["error"])
+    if state.get("verifier_verdict") != "FAIL":
+        if not state.get("weak_attempt_scores"):
+            return _rejected_by_error("weak solver was never graded")
+        if not weak_gate_failures(state["weak_attempt_scores"]) and not state.get("strong_attempt_scores"):
+            return _rejected_by_error("strong solver was never graded")
+
+    weak, strong = state.get("weak_score"), state.get("strong_score")
+    gap = round(strong - weak, 1) if weak is not None and strong is not None else None
+    failure = _failure(state)
+    if failure is None:
+        return {"status": "ACCEPTED", "score_gap": gap, "failure_mode": None, "fail_reason": None}
+
+    mode, reasons = failure
+    fail_reason = "; ".join(reasons)
+    attempt = {"round_num": state["round_num"], "question": state["question"],
+               "failure_mode": mode, "fail_reason": fail_reason}
+    return {
+        "status": "REJECTED" if state["round_num"] >= config.MAX_ROUNDS else "REVISE",
+        "score_gap": gap,
+        "failure_mode": mode,
+        "fail_reason": fail_reason,
+        "history": [*(state.get("history") or []), attempt],
+    }

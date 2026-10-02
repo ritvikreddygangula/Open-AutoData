@@ -46,3 +46,7 @@
 ## feat/site-readme
 
 - `100d56c` Update README and site to match the merged pipeline
+
+## docs/readme-mermaid
+
+- `72aeb50` Replace the README data flow image with a Mermaid flowchart

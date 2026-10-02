@@ -36,8 +36,9 @@
 
 ## feat/agent-graph
 
-- `bb263cd` Add recorder that writes trajectories, accepted pairs and Snowflake rows
-- `1c9f341` Wire the agent nodes into the LangGraph loop
-- `38c8881` Add parallel chunk runner and command line entry point
-- `5d43103` refactor: stop the verifier treating given figures as answer leakage
-- `0c6b134` refactor: hide per-request HTTP logs during pipeline runs
+- `fc6169a` Add recorder that writes trajectories, accepted pairs and Snowflake rows
+- `6277df1` Wire the agent nodes into the LangGraph loop
+- `ab2a0ee` Add parallel chunk runner and command line entry point
+- `57df389` refactor: stop the verifier treating given figures as answer leakage
+- `918d4db` refactor: hide per-request HTTP logs during pipeline runs
+- `b5c9c84` refactor: run the strong solver every round so each round has a gap

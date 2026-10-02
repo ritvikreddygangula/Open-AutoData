@@ -42,3 +42,7 @@
 - `57df389` refactor: stop the verifier treating given figures as answer leakage
 - `918d4db` refactor: hide per-request HTTP logs during pipeline runs
 - `b5c9c84` refactor: run the strong solver every round so each round has a gap
+
+## feat/site-readme
+
+- `100d56c` Update README and site to match the merged pipeline

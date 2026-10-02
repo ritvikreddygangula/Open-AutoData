@@ -3,6 +3,7 @@
 Each node takes the state and returns only the fields it changes.
 """
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 from src import config, llm
 from src.default_prompts import get_prompt
@@ -142,3 +143,28 @@ def node_verifier(state) -> dict:
     if not failed:
         return {"verifier_verdict": "PASS", "verifier_feedback": feedback}
     return {"verifier_verdict": "FAIL", "verifier_feedback": "; ".join(failed) + (f": {feedback}" if feedback else "")}
+
+
+SOLVER_TEMPERATURE = 1.0  # paper §4: solvers sample at temperature 1.0
+_SOLVER_ROLES = ("weak", "strong")
+
+
+def _solver_request(state) -> str:
+    # Solvers never see the filing or the reference answer (paper §3.1).
+    return f"CONTEXT:\n{state['context']}\n\nQUESTION:\n{state['question']}"
+
+
+def node_solvers(state, role: str) -> dict:
+    """Answer the question SOLVER_SAMPLES times in parallel with the weak or strong model."""
+    if role not in _SOLVER_ROLES:
+        raise ValueError(f"unknown solver role {role!r}")
+    # Identical prompt for both solvers: the paper saw agents "cheat" by telling the weak one to be weak.
+    messages = [_system("SOLVER_SYSTEM"), {"role": "user", "content": _solver_request(state)}]
+    try:
+        with ThreadPoolExecutor(max_workers=config.SOLVER_SAMPLES) as pool:
+            answers = list(pool.map(
+                lambda _: llm.chat(role, messages, SOLVER_TEMPERATURE), range(config.SOLVER_SAMPLES)
+            ))
+    except llm.LLMError as e:
+        return {"error": f"solver: {role} failed: {e}"}
+    return {f"{role}_answers": answers}

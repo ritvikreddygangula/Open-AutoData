@@ -214,14 +214,29 @@ The website replays the latest run from `data/trajectories.json` and polls it wh
 
 ## Benchmark
 
-We compare OpenAutodata against single-shot generation on the same chunks: one prompt, one question, no checks. Both sets go through the same solvers and rubric judge, then Qwen3.8 judges them blind, with A/B order randomized.
+**Setup.** On the same chunks, we compared a single-shot baseline (one prompt, one question, no checks) with OpenAutodata's accepted questions. Qwen3.8, which never runs inside the loop, judged each pair blind with A/B order randomized and rated difficulty from 1 to 10. Baseline questions have no rubric, so they are compared by the judge only, not by the solvers.
 
-| Metric | Single-shot baseline | OpenAutodata |
+![Benchmark: single-shot baseline vs OpenAutodata](data/benchmark.png)
+
+| Blind judge result | Single-shot baseline | OpenAutodata |
 |---|---|---|
-| Mean weak solver score | _pending run_ | _pending run_ |
-| Mean strong solver score | _pending run_ | _pending run_ |
-| Mean difficulty gap | _pending run_ | _pending run_ |
-| Blind judge preference | _pending run_ | _pending run_ |
+| Judge-rated difficulty (1 to 10) | 2.5 | 6.0 |
+| Pairs where OpenAutodata was judged harder | | 2 of 2 |
+| Pairs where OpenAutodata was preferred overall | | 2 of 2 |
+| Pairs where OpenAutodata was judged more valid | | 0 of 2 |
+
+**Accepted questions from the loop**, scored by the rubric judge:
+
+| Metric | OpenAutodata | Meta paper, Table 1 (for reference) |
+|---|---|---|
+| Weak solver average | 27.8 | 45.8 |
+| Strong solver average | 84.2 | 77.2 |
+| Weak/strong gap | 56.5 | 31.4 |
+| Rounds per accepted question | 2.5 | 6.59 |
+
+Meta used different models and a different domain (CS papers), so this is a reference point, not a head-to-head.
+
+**What it means.** The loop made questions clearly harder, and the gap between the small and large model is wide. But the judge rated the baseline questions more valid in both pairs. Harder is not the same as correct (see Limitations). Next: run on all 27 chunks and score the baseline with the same solvers and rubric judge.
 
 ## Repository layout
 

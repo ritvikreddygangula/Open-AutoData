@@ -43,9 +43,84 @@ The quality verifier and the rubric judge run on the same model (Nemotron 3 Supe
 
 When a round fails, it is labelled `TOO_EASY`, `TOO_HARD`, `FAILED_ON_STRONG` or `FAILED_QV`. The Challenger then sees every earlier failed question with the judge's notes and must write an entirely new question from a different angle. After 3 failed rounds the chunk is discarded and the reason is logged.
 
-![OpenAutodata data flow](Data_flow.png)
+### Data flow
 
-_The diagram predates the quality verifier, which runs between the Challenger and the solvers._
+```mermaid
+flowchart TD
+    %% ---------- Sources ----------
+    SF[("Snowflake Marketplace<br>SEC 10-Q filings")]:::snow
+    EXTRACT["SQL extract + chunk<br>src/chunks.py"]:::py
+    CHUNKS[/"data/chunks.json<br>27 cleaned chunks"/]:::file
+    SF -->|SELECT filing text| EXTRACT -->|write chunks| CHUNKS
+
+    %% ---------- Agent loop ----------
+    subgraph LOOP["LangGraph loop · src/agent_graph.py · per chunk, chunks in parallel"]
+        direction TB
+        CH["node_challenger<br>GLM-5.3<br>writes context · question · reference answer<br>rubric of 10-15 criteria, weights 1-7"]:::agent
+        QV{"node_verifier<br>Nemotron 3 Super<br>leakage · reasoning vs recall<br>rubric quality · type"}:::gate
+        WS["node_solvers · weak<br>Llama 3.2 3B · SLM<br>3 attempts · context + question only"]:::agent
+        WJ["node_judge · weak<br>Nemotron 3 Super<br>met / not met per criterion"]:::agent
+        SS["node_solvers · strong<br>DeepSeek V4.1 Flash<br>same prompt · 3 attempts · every round"]:::agent
+        SJ["node_judge · strong<br>Nemotron 3 Super<br>code computes 0-100 scores"]:::agent
+        EV{"node_evaluate · acceptance gate<br>weak avg ≤ 65 · best weak ≤ 75 · no weak 0<br>60 ≤ strong avg < 95 · gap ≥ 20"}:::gate
+        REC["record · src/recorder.py<br>every round logged"]:::py
+
+        CH -->|package| QV
+        QV -->|PASS| WS --> WJ --> SS --> SJ --> EV
+        QV -->|FAIL · FAILED_QV| EV
+        CH -.->|model error| EV
+        EV --> REC
+        REC -->|"REVISE · round < 3<br>failed questions + judge notes<br>TOO_EASY · TOO_HARD · FAILED_ON_STRONG · FAILED_QV"| CH
+    end
+
+    CHUNKS -->|chunk_id, text| CH
+
+    %% ---------- Outputs ----------
+    DISCARD["REJECTED<br>round 3 failed or model error<br>fail_reason logged"]:::reject
+    TRAJ[/"data/trajectories.json<br>every round"/]:::file
+    ACC[/"data/accepted.json<br>accepted pairs"/]:::file
+    SYNC["src/snowflake_sync.py<br>snowflake-connector-python"]:::py
+    T_TRAJ[("OPENAUTODATA_TRAJECTORIES")]:::snow
+    T_ACC[("OPENAUTODATA_ACCEPTED_SET")]:::snow
+    VIEWS[("V_RESULTS_ROWS · V_RESULTS_SUMMARY<br>sql/results.sql")]:::snow
+    SITE["site/ · Next.js run log<br>polls trajectories.json"]:::py
+
+    REC -->|REJECTED| DISCARD
+    REC -->|every round| TRAJ
+    REC -->|ACCEPTED| ACC
+    REC -->|save_trajectory_record<br>save_accepted_record| SYNC
+    SYNC -->|INSERT| T_TRAJ
+    SYNC -->|INSERT| T_ACC
+    T_TRAJ --> VIEWS
+    TRAJ -.->|poll| SITE
+
+    %% ---------- Benchmark (in progress) ----------
+    subgraph BENCH["Benchmark · in progress"]
+        direction TB
+        BASE["src/baseline.py<br>single prompt · no checks · arm = baseline"]:::todo
+        BJSON[/"data/baseline.json"/]:::file
+        BM["src/benchmark.py<br>blind A/B · randomized order"]:::todo
+        QWEN["Qwen3.8 2.4T-A95B<br>final judge"]:::agent
+        PNG[/"data/benchmark.png"/]:::file
+        BASE --> BJSON -->|baseline set| BM
+        BM <-->|scores · preference| QWEN
+        BM -->|matplotlib| PNG
+    end
+
+    CHUNKS -->|same chunks| BASE
+    ACC -->|loop set| BM
+
+    %% ---------- Styles (match the original legend) ----------
+    classDef snow fill:#8fd3fe,stroke:#1d6fa5,color:#0b2540
+    classDef agent fill:#cbb8fa,stroke:#6a4fc9,color:#1e1340
+    classDef file fill:#ffe58f,stroke:#b8930b,color:#3d3000
+    classDef py fill:#e5e7eb,stroke:#6b7280,color:#111827
+    classDef gate fill:#ffc2c2,stroke:#d14343,color:#4a0d0d
+    classDef reject fill:#ff9b9b,stroke:#b42318,color:#4a0d0d
+    classDef todo fill:#e5e7eb,stroke:#6b7280,stroke-dasharray:5 5,color:#111827
+```
+
+_Dashed boxes are in progress. The original planning sketch is in [`Data_flow.png`](Data_flow.png)._
 
 ## Models
 

@@ -9,6 +9,8 @@ from src import config
 
 MAX_RETRIES = 2
 BACKOFF_SECONDS = 1.0
+# Shared OpenRouter provider pools stay overloaded for a while; a 1s retry just hits the same wall.
+RATE_LIMIT_BACKOFF_SECONDS = 10.0
 _RETRYABLE = (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError)
 
 _client = None
@@ -38,6 +40,7 @@ def chat(role: str, messages: list[dict], temperature: float = 0.7) -> str:
     client = get_client()
 
     for attempt in range(MAX_RETRIES + 1):
+        wait = BACKOFF_SECONDS
         try:
             response = client.chat.completions.create(
                 model=model, messages=messages, temperature=temperature
@@ -48,10 +51,12 @@ def chat(role: str, messages: list[dict], temperature: float = 0.7) -> str:
             problem = "empty reply"
         except _RETRYABLE as e:
             problem = f"{type(e).__name__}: {e}"
+            if isinstance(e, openai.RateLimitError):
+                wait = RATE_LIMIT_BACKOFF_SECONDS
         except openai.APIError as e:
             raise LLMError(f"{role} ({model}) failed: {e}") from e
         if attempt < MAX_RETRIES:
-            time.sleep(BACKOFF_SECONDS * 2**attempt)
+            time.sleep(wait * 2**attempt)
 
     raise LLMError(f"{role} ({model}) gave up after {MAX_RETRIES + 1} attempts: {problem}")
 

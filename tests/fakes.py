@@ -1,4 +1,5 @@
 """Scripted stand-in for openai.OpenAI used by llm tests."""
+import threading
 from types import SimpleNamespace
 
 import httpx
@@ -34,3 +35,27 @@ class FakeClient:
             return SimpleNamespace(choices=None)
         message = SimpleNamespace(content=reply)
         return SimpleNamespace(choices=[SimpleNamespace(message=message)])
+
+
+class RoutedClient:
+    """Answers by model ID, so parallel calls can be scripted. A route is a list of
+    replies popped in order, or a function of the request kwargs. Thread-safe."""
+
+    def __init__(self, routes):
+        self.routes = {model: (r if callable(r) else list(r)) for model, r in routes.items()}
+        self.calls = []
+        self._lock = threading.Lock()
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+    def _create(self, **kwargs):
+        with self._lock:
+            self.calls.append(kwargs)
+            route = self.routes[kwargs["model"]]
+            reply = route(kwargs) if callable(route) else route.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        message = SimpleNamespace(content=reply)
+        return SimpleNamespace(choices=[SimpleNamespace(message=message)])
+
+    def calls_to(self, model):
+        return [call for call in self.calls if call["model"] == model]

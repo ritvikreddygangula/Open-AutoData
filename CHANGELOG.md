@@ -15,3 +15,21 @@
 - `5d8d7f4` refactor: make CSV loading portable to Windows and tolerant of stray columns
 - `f5b4eab` refactor: tag every record with run_id and arm to match the Snowflake schema
 - `a8f7ce8` refactor: include all three weak and strong answers in each trajectory record
+
+## feat/agent-nodes
+
+- `3680f7b` Add verifier model and paper acceptance limits to config
+- `0ae0225` Add rubric validation and weighted answer scoring
+- `5c5a5b3` Add the paper's weak and strong acceptance checks
+- `d6f1c1a` Extend agent state with challenger output, attempt scores and failure history
+- `ac70ae3` Add default agent prompts adapted from the Autodata paper
+- `048cee3` Add challenger node that writes context, question and rubric
+- `d0d1eab` Add quality verifier node for leakage and rubric checks
+- `fc9abaa` Add solver node that answers from context only
+- `503588a` Add rubric judge node with code-computed scores
+- `1bcc149` Add evaluate node applying the paper's acceptance gate
+- `bbcf954` refactor: back off longer when an OpenRouter provider is rate-limited
+- `5cb71c7` refactor: label a zero-scoring weak attempt as too hard instead of too easy
+- `2261142` Update team docs with the paper-aligned agent design
+- `fd22e9e` refactor: require numeric rubric criteria to state the expected value
+- `8f40e28` refactor: show the challenger the judge's notes on each failed round

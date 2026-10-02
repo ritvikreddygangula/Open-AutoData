@@ -16,7 +16,13 @@ def test_default_models_match_data_flow():
         "strong": "deepseek/deepseek-v4.1-flash",
         "judge": "nvidia/nemotron-3-super-120b-a12b",
         "final_judge": "qwen/qwen3.8-2.4t-a95b",
+        "verifier": "nvidia/nemotron-3-super-120b-a12b",
     }
+
+
+def test_paper_acceptance_limits():
+    assert (config.WEAK_ATTEMPT_MAX, config.STRONG_MAX) == (75, 95)
+    assert (config.RUBRIC_MIN_ITEMS, config.RUBRIC_MAX_ITEMS, config.RUBRIC_MAX_WEIGHT) == (10, 15, 7)
 
 
 def test_model_can_be_overridden_from_env(monkeypatch):

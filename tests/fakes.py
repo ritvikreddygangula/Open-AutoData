@@ -4,6 +4,8 @@ from types import SimpleNamespace
 import httpx
 import openai
 
+NO_CHOICES = object()  # OpenRouter can return 200 with an error body and no choices
+
 REQUEST = httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
 
 
@@ -16,7 +18,7 @@ def status_error(cls, code):
 
 
 class FakeClient:
-    """Each call pops the next scripted reply: a string, None, or an exception."""
+    """Each call pops the next scripted reply: a string, None, NO_CHOICES, or an exception."""
 
     def __init__(self, *replies):
         self.replies = list(replies)
@@ -28,5 +30,7 @@ class FakeClient:
         reply = self.replies.pop(0)
         if isinstance(reply, Exception):
             raise reply
+        if reply is NO_CHOICES:
+            return SimpleNamespace(choices=None)
         message = SimpleNamespace(content=reply)
         return SimpleNamespace(choices=[SimpleNamespace(message=message)])

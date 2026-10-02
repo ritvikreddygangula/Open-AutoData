@@ -42,7 +42,7 @@ def chat(role: str, messages: list[dict], temperature: float = 0.7) -> str:
             response = client.chat.completions.create(
                 model=model, messages=messages, temperature=temperature
             )
-            content = response.choices[0].message.content
+            content = response.choices[0].message.content if response.choices else None
             if content and content.strip():
                 return content
             problem = "empty reply"

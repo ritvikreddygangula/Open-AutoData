@@ -2,7 +2,7 @@ import openai
 import pytest
 
 from src import llm
-from tests.fakes import FakeClient, connection_error, status_error
+from tests.fakes import NO_CHOICES, FakeClient, connection_error, status_error
 
 MESSAGES = [{"role": "user", "content": "hi"}]
 
@@ -80,3 +80,9 @@ def test_get_client_leaves_retries_to_chat_and_caps_wait(monkeypatch):
     assert llm.get_client() == "client"
     assert built["max_retries"] == 0
     assert built["timeout"] == llm.config.LLM_TIMEOUT_SECONDS
+
+
+def test_chat_retries_reply_without_choices(use_client):
+    client = use_client(NO_CHOICES, "ok")
+    assert llm.chat("judge", MESSAGES) == "ok"
+    assert len(client.calls) == 2

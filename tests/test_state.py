@@ -16,6 +16,8 @@ def test_initial_state_starts_pending_before_round_one():
     assert state["run_id"] == "run-1" and state["arm"] == "loop"
     assert state["status"] == "PENDING"
     assert state["weak_answers"] == [] and state["strong_answers"] == []
+    assert state["weak_attempt_scores"] == [] and state["strong_attempt_scores"] == []
+    assert state["history"] == []
 
 
 def test_initial_state_can_tag_another_arm():
@@ -27,7 +29,9 @@ def test_record_fields_lead_with_run_and_arm_like_the_schema():
         "run_id", "arm", "chunk_id", "round_num", "question", "reference_answer",
         "weak_answer", "strong_answer",
         "weak_score", "strong_score", "score_gap", "judge_feedback", "status",
-        "fail_reason", "timestamp",
+        "question_type", "skill_tags", "context", "rubric",
+        "weak_attempt_scores", "strong_attempt_scores",
+        "verifier_feedback", "failure_mode", "fail_reason", "timestamp",
     )
 
 
@@ -38,6 +42,8 @@ def test_to_record_keeps_only_contract_fields():
         "weak_answers": ["w1", "w2", "w3"], "strong_answers": ["s1", "s2", "s3"],
         "weak_score": 40.0, "strong_score": 80.0, "score_gap": 40.0,
         "judge_feedback": "good", "status": "ACCEPTED",
+        "context": "Revenue was $86.3M vs $79.1M.", "rubric": [{"criterion": "c", "weight": 5}],
+        "weak_attempt_scores": [40.0, 35.0, 45.0], "history": [{"question": "old"}],
     }
     record = to_record(state)
     assert tuple(record) == RECORD_FIELDS
@@ -45,7 +51,10 @@ def test_to_record_keeps_only_contract_fields():
     assert record["run_id"] == "run-1" and record["arm"] == "loop"
     assert record["weak_answer"] == ["w1", "w2", "w3"]
     assert record["strong_answer"] == ["s1", "s2", "s3"]
+    assert record["context"] == "Revenue was $86.3M vs $79.1M."
+    assert record["weak_attempt_scores"] == [40.0, 35.0, 45.0]
     assert "chunk_text" not in record and "weak_answers" not in record
+    assert "history" not in record
 
 
 def test_to_record_fills_missing_fields_with_none_and_is_json_safe():
